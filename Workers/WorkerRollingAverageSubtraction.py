@@ -52,7 +52,6 @@ class WorkerRollingAverageSubtraction(Worker):
         
         Args:
             datFile: the latest datfile
-        
         """
         self.datFiles.append(datFile)
         intensities = []

@@ -51,18 +51,14 @@
   <h1>Source code for WorkerSuper</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">zmq</span>
 <span class="kn">import</span> <span class="nn">time</span>
-
 <span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
 <span class="kn">from</span> <span class="nn">Worker</span> <span class="kn">import</span> <span class="n">Worker</span>
-
-
 
 <div class="viewcode-block" id="WorkerSuper"><a class="viewcode-back" href="../Workers/workersuper.html#WorkerSuper.WorkerSuper">[docs]</a><span class="k">class</span> <span class="nc">WorkerSuper</span><span class="p">(</span><span class="n">Worker</span><span class="p">):</span>    
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
 <span class="sd">    Example Worker who has inherited the base worker</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">Worker</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;Worker Super&quot;</span><span class="p">)</span>
         
