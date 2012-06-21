@@ -13,6 +13,7 @@ Contents:
 
    engine
    Core/core
+   Workers/workers
 
 Indices and tables
 ==================

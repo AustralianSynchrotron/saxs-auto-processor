@@ -1,20 +1,8 @@
-"""
-Jack Dwyer
-31-05-2012
-Base Worker Class
-"""
-
-
 import zmq
 import sys
 sys.path.append("../")
-
 import time
-
 import logging
-
-
-import time
 from threading import Thread
 from Core import AverageList
 from Core import DatFile
@@ -22,6 +10,11 @@ from Core import DatFileWriter
 
 
 class Worker():
+    """
+    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
+    The base class for all Workers to inherit from, has some generic methods
+    """
+    
     def __init__(self, name = "Default Worker"):
         #General Variables
         self.name = name
@@ -52,6 +45,19 @@ class Worker():
 
         
     def connect(self, pullPort = False, pubPort = False):
+        """
+        Connects worker to ZMQ ports
+         
+        Args:
+            PullPort: The pull side of the connection, the worker will always bind this
+            PubPort: The publish port, for publishing to the WorkerDB, always will be connect except at WorkerDB end
+        
+        Puts worker in run() where it will keep alive recieving commands
+        
+        Raises:
+            ZMQ-Error: if unable to connect
+        """
+        
         try:
             if (pullPort):
                 self.pull.bind("tcp://127.0.0.1:"+str(pullPort))
@@ -71,6 +77,13 @@ class Worker():
         
     
     def run(self):
+        """
+        Is a while loop that parses the commands sent to it from the pull port, if no command is found after parses sends command object to processRequest
+        
+        Contains all the default commands and functions expected in every worker
+        
+        """
+        
         try:
             while True:
                 recievedObject = self.pull.recv_pyobj()
@@ -111,8 +124,8 @@ class Worker():
                
                 #Test commands
                 if (command == "test"):
-                     self.logger.info("test command received")
-                     continue
+                    self.logger.info("test command received")
+                    continue
                  
                 if (command == "test_receive"):
                     print recievedObject['test_receive']
@@ -124,8 +137,8 @@ class Worker():
                     print self.getName()
                     
                 else:
-                   self.processRequest(command, recievedObject)      
-                   continue
+                    self.processRequest(command, recievedObject)      
+                    continue
                
                
         except KeyboardInterrupt:
@@ -138,12 +151,30 @@ class Worker():
     #This must be overridden
     #It specifies how you want to process specific commands for workers   
     def processRequest(self, command, obj):
+        """
+        If the command passes the generic requests, it is pass down here where this function has to be overwritten to handle the specific worker needs
+        
+        Raises:
+            Exception: if it is now over ridden
+        """
         raise Exception("Must override this method")
     
     def rootNameChange(self):
+        """
+        Must be over ridden, so the worker can handle the root name change event
+        
+        Raises:
+            Exception: if it is not over ridden
+        """
         raise Exception("Must override this method")
 
     def newBuffer(self):
+        """
+        Must be over ridden, so the worker can handle the new buffer event
+        
+        Raises:
+            Exception: if it is not over ridden
+        """
         raise Exception("Must override this method")
 
 
@@ -151,23 +182,44 @@ class Worker():
          
     #Generic Methods shared by all workers - WorkerDB over rides some stuff
     def setUser(self, user):
+        """
+        Sets the workers user to the user passed by the command string
+        """
         self.user = str(user)
         self.logger.info("User set to %(user)s" % {'user':self.user})
                 
     def setDirectory(self, directory):
+        """
+        Sets the workers path to the path passed by the command string
+        """
         self.logger.info("Setting Absolute Directory - %s" % directory)
         self.absoluteLocation = directory
      
     def getName(self):
+        """
+        Mainly used for testing to allow for all workers to reply
+        """        
         return self.name
         
     #This should be called from super class    
     def clear(self):
+        """
+        Standard function for clearing out the Workers after a new user or experiment as occured
+        """
         self.logger.info("Cleared Details")
         self.user = None
         self.absoluteLocation = None 
         
     def close(self):
+        """
+        Close's ZMQ sockets correctly and kills workers
+        
+        Raises:
+            Exception: if it fails
+        
+        Finally:
+            Kills teh worker (sys.exit())
+        """
         try:
             time.sleep(0.1)
             self.pull.close()  
@@ -180,6 +232,9 @@ class Worker():
     
     #Generic method to publish data to the database worker
     def pubData(self, command):
+        """
+        Generic Function for publishing data
+        """
         self.pub.send({'command':command})
     
     
@@ -188,6 +243,9 @@ class Worker():
     
     ###Logging Setup
     def setLoggingDetails(self):
+        """
+        Generic Logging Details
+        """
         LOG_FILENAME = 'logs/'+self.name+'.log'
         FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
         logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,format=FORMAT)

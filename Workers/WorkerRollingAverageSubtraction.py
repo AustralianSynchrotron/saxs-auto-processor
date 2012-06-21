@@ -1,7 +1,3 @@
-"""
-Jack Dwyer
-"""
-
 import logging
 import sys
 import zmq
@@ -14,7 +10,12 @@ from Core import DatFileWriter
 
 
 
-class WorkerRollingAverageSubtraction(Worker):    
+class WorkerRollingAverageSubtraction(Worker): 
+    """
+    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
+    Takes the constant stream of Static Images, averages them writes to the disk then subtracts and writes to the disk.
+    It does this for every sample type
+    """   
     def __init__(self):
         Worker.__init__(self, "Worker Rolling Average Subtraction")
         
@@ -24,6 +25,10 @@ class WorkerRollingAverageSubtraction(Worker):
         self.datIndex = 1
         
     def processRequest(self, command, obj):
+        """
+        Specific worker commands
+        """
+        
         command = str(obj['command'])
         
         if (command == "static_image"):
@@ -42,6 +47,13 @@ class WorkerRollingAverageSubtraction(Worker):
     
     
     def subAvIntensities(self, datFile):
+        """
+        Averages out the datfile againse the other datfiles
+        
+        Args:
+            datFile: the latest datfile
+        
+        """
         self.datFiles.append(datFile)
         intensities = []
         for datFile in self.datFiles:
@@ -70,6 +82,15 @@ class WorkerRollingAverageSubtraction(Worker):
         
 
     def subtractBuffer(self, intensities, buffer):
+        """
+        Subtracts the averaged buffer from the averaged datFiles
+        Currently only works on the intensities
+        
+        Args:
+            intensities: Little cheat as it only takes intensities at the moment 
+            buffer: corresponding buffer intensities
+        
+        """
         if (buffer):
             newIntensities = []
             for i in range(0, len(intensities)):
@@ -85,16 +106,26 @@ class WorkerRollingAverageSubtraction(Worker):
         self.logger.info("Set Averaged Buffer")
         
     def rootNameChange(self):
+        """
+        Worker needs to clear out the current datfiles and increase the sample index
+        """
         self.datFiles = []
         self.datIndex = self.datIndex + 1
     
     def newBuffer(self):
+        """
+        needs to clear out the datFiles, and the averaged Buffer
+        """
         self.datFiles = []
         self.averagedBuffer = None
         
     def clear(self):
+        """
+        Calls super clear(), removes averaged buffer, sets index back to 1 and clears out all datFiles
+        """
         Worker.clear(self)
         self.averagedBuffer = None
+        self.datFiles = []
         self.datIndex = 1
         
         
@@ -114,7 +145,3 @@ if __name__ == "__main__":
     testPush = context.socket(zmq.PUSH)
     testPush.connect("tcp://127.0.0.1:"+str(port))
     testPush.send_pyobj({'command' : "averaged_buffer", "averaged_buffer":buffer})  #Buffer needs to be a datFile object
-    testPush.send_pyobj({'command' : "static_image", "static_image":datFile})  #datFile needs to be a datFile object
-    testPush.send_pyobj({'command' : "static_image", "static_image":datFile})  #datFile needs to be a datFile object
-    testPush.send_pyobj({'command' : "static_image", "static_image":datFile})  #datFile needs to be a datFile object
-

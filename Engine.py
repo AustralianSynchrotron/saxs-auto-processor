@@ -69,7 +69,8 @@ class Engine():
     
     def setConfiguration(self, configuration):
         """Reads the default configuration file that is passed at object creation 
-        The configuration stores the Workers that need to be loaded, whether an Experiment name is being used
+        The configuration stores the Workers that need to be loaded, whether an Experiment name is being used, this allows for any workers
+        to be loaded dynamically at run time.        
         The Absolute location of the datFiles.
         Any PV's that need to be watched
     

@@ -1,4 +1,4 @@
-import logging
+            import logging
 import sys
 sys.path.append("../")
 
@@ -11,6 +11,10 @@ from Core import DatFile
 
 
 class WorkerStaticImage(Worker):    
+    """
+    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
+    | Subtracts every image from buffer
+    """
     def __init__(self):
         Worker.__init__(self, "Worker Static Image")
         

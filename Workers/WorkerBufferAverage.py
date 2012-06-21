@@ -1,7 +1,3 @@
-"""
-Jack Dwyer
-"""
-
 import logging
 import sys
 import zmq
@@ -14,7 +10,14 @@ from Core import DatFileWriter
 
 
 
-class WorkerBufferAverage(Worker):    
+class WorkerBufferAverage(Worker):  
+    """
+    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
+    | Average Buffer Worker
+    | Takes a constant steam of buffers for a related sample and averages it out
+    | Utilises the REQ-REP design pattern from ZMQ
+    """
+      
     def __init__(self):
         Worker.__init__(self, "Worker Buffer Average")
         
@@ -33,6 +36,9 @@ class WorkerBufferAverage(Worker):
 
     
     def connect(self, pullPort = False, pubPort = False, replyPort = False):
+        """
+        Over ridden Connect Function, adds in the replyport so the Engine can contact this worker for the latest Averaged Buffer
+        """
         try:
             if (pullPort):
                 self.pull.bind("tcp://127.0.0.1:"+str(pullPort))
@@ -58,7 +64,10 @@ class WorkerBufferAverage(Worker):
 
     
         
-    def processRequest(self, command, obj):                
+    def processRequest(self, command, obj):    
+        """
+        Handles any commands passed to the worker if the generic run() method is unable to find a match
+        """            
         self.logger.info("Processing Received object")
         command = str(obj['command'])
         
@@ -70,6 +79,9 @@ class WorkerBufferAverage(Worker):
             
             
     def averageBuffer(self, buffer):
+        """
+        Function for averaging out and writing out the averaged buffer
+        """
         self.buffers.append(buffer)
         intensities = []
         for buffer in self.buffers:
@@ -88,6 +100,11 @@ class WorkerBufferAverage(Worker):
 
     
     def requestBufferThread(self):
+        """
+        This is a function placed in its own thread, allows the Engine to communicate and ask for the current Averaged Buffer and wait for a Response
+
+        """
+        
         try:
             while True:
                 test = self.reply.recv() #wait for request of buffer
@@ -108,10 +125,17 @@ class WorkerBufferAverage(Worker):
         self.logger.info("Root Name Change Called - No Action Required")
 
     def newBuffer(self):
+        """
+        | Clears out the current buffer as expecting new one.
+        | Increments sample number
+        """
         self.averagedBuffer = None
         self.bufferIndex = self.bufferIndex + 1
     
     def clear(self):
+        """
+        Calls super clear() and then the workers specific requirements
+        """
         Worker.clear(self)
         self.averagedBuffer = None
         self.bufferIndex = 1
