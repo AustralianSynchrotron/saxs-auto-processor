@@ -13,4 +13,3 @@ Contents:
   logline
   logwatcher
   outlierrejection
-  rootname
