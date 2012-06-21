@@ -1,17 +1,13 @@
 import zmq
 import time
-
 from threading import Thread
 from Worker import Worker
-
-
 
 class WorkerSuper(Worker):    
     """
     .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     Example Worker who has inherited the base worker
     """
-    
     def __init__(self):
         Worker.__init__(self, "Worker Super")
         
