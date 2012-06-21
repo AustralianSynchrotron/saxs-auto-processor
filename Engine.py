@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 ###BASH start stop
 #screen -dmS "engine" "./engine.py"
 
