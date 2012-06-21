@@ -1,6 +1,5 @@
 import time
 import sys
-from Logger import logger
 from threading import Thread
 
 

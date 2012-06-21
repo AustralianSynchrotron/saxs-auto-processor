@@ -1,5 +1,4 @@
 import os
-import Logger
 
 
 class DatFileWriter:
@@ -49,8 +48,7 @@ class DatFileWriter:
             formatting = '%'+str(8 + self.accuracy)+'.'+str(self.accuracy)+'f %'+str(6 + self.accuracy)+'.'+str(self.accuracy)+'f %'+str(6 + self.accuracy)+'.'+str(self.accuracy)+'f \n'
             f.write(formatting % (self.data['q'][i], self.data['i'][i], self.data['errors'][i]))        
         f.close()
-        Logger.logger(self.datName, "DatFile Written")
-
+	#TODO: add to log what was written
 
         
 #test
