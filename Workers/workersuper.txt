@@ -1,5 +1,0 @@
-Worker Inherited Example
-=======================
-
-.. automodule:: RootName
-  :members:
