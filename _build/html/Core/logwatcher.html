@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Log Watcher &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Core Library" href="core.html" />
+    <link rel="next" title="Outlier Rejection" href="outlierrejection.html" />
+    <link rel="prev" title="LogLine Parser" href="logline.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="outlierrejection.html" title="Outlier Rejection"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="logline.html" title="LogLine Parser"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="core.html" accesskey="U">Core Library</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-LogWatcher">
+<span id="log-watcher"></span><h1>Log Watcher<a class="headerlink" href="#module-LogWatcher" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="LogWatcher.LogWatcher">
+<em class="property">class </em><tt class="descclassname">LogWatcher.</tt><tt class="descname">LogWatcher</tt><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object that watches the specified log file for changes to the log lines,
+it returns every new line</p>
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.fileWatch">
+<tt class="descname">fileWatch</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.fileWatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.fileWatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Here we watch constantly for a new line to be created</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.kill">
+<tt class="descname">kill</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.kill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.kill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to kill the current log watcher thread, used it we need to restart/change user</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.setCallback">
+<tt class="descname">setCallback</tt><big>(</big><em>callback</em><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.setCallback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.setCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the callback that will take every new line</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.setLocation">
+<tt class="descname">setLocation</tt><big>(</big><em>logLocation</em><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.setLocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.setLocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets location of the where the log file is that we want to watch</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.watch">
+<tt class="descname">watch</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.watch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.watch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts a thread that watches the logfile for changes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LogWatcher.LogWatcher.watchThread">
+<tt class="descname">watchThread</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/LogWatcher.html#LogWatcher.watchThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LogWatcher.LogWatcher.watchThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>This returns every new line back up to the call back</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="logline.html"
+                        title="previous chapter">LogLine Parser</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="outlierrejection.html"
+                        title="next chapter">Outlier Rejection</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/Core/logwatcher.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="outlierrejection.html" title="Outlier Rejection"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="logline.html" title="LogLine Parser"
+             >previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="core.html" >Core Library</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

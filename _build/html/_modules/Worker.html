@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Worker &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for Worker</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;../&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">AverageList</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">DatFile</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">DatFileWriter</span>
+
+
+<div class="viewcode-block" id="Worker"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker">[docs]</a><span class="k">class</span> <span class="nc">Worker</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    The base class for all Workers to inherit from, has some generic methods</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Default Worker&quot;</span><span class="p">):</span>
+        <span class="c">#General Variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        
+        
+        <span class="c">#ZMQ stuff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pull</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PULL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PUB</span><span class="p">)</span>
+        
+        <span class="c">#Class objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datWriter</span> <span class="o">=</span> <span class="n">DatFileWriter</span><span class="o">.</span><span class="n">DatFileWriter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averageList</span> <span class="o">=</span> <span class="n">AverageList</span><span class="o">.</span><span class="n">AverageList</span><span class="p">()</span>
+        
+        <span class="c">#Class Variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="c">#User Specific Variables (eg, user, their location relative to engine)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">absoluteLocation</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        
+        
+        <span class="c">#Setup logging </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoggingDetails</span><span class="p">()</span>
+        
+
+
+        
+<div class="viewcode-block" id="Worker.connect"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pullPort</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">pubPort</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Connects worker to ZMQ ports</span>
+<span class="sd">         </span>
+<span class="sd">        Args:</span>
+<span class="sd">            PullPort: The pull side of the connection, the worker will always bind this</span>
+<span class="sd">            PubPort: The publish port, for publishing to the WorkerDB, always will be connect except at WorkerDB end</span>
+<span class="sd">        </span>
+<span class="sd">        Puts worker in run() where it will keep alive recieving commands</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ZMQ-Error: if unable to connect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pullPort</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pullPort</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">pubPort</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pubPort</span><span class="p">))</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Connected Pull Port at: </span><span class="si">%(pullPort)s</span><span class="s"> - Publish Port at: </span><span class="si">%(pubPort)s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">{</span><span class="s">&#39;pullPort&#39;</span> <span class="p">:</span> <span class="n">pullPort</span><span class="p">,</span> <span class="s">&#39;pubPort&#39;</span> <span class="p">:</span> <span class="n">pubPort</span><span class="p">})</span>
+        
+        <span class="k">except</span><span class="p">:</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;ZMQ Error - Unable to connect&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ZMQ Error - Unable to connect&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+
+        
+    </div>
+<div class="viewcode-block" id="Worker.run"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is a while loop that parses the commands sent to it from the pull port, if no command is found after parses sends command object to processRequest</span>
+<span class="sd">        </span>
+<span class="sd">        Contains all the default commands and functions expected in every worker</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">recievedObject</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="o">.</span><span class="n">recv_pyobj</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Received Object&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">command</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">recievedObject</span><span class="p">[</span><span class="s">&#39;command&#39;</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;No command key sent with object, can not process request&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                
+                <span class="c">#Default Commands            </span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;update_user&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">setUser</span><span class="p">(</span><span class="n">recievedObject</span><span class="p">[</span><span class="s">&#39;user&#39;</span><span class="p">])</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Malformed command dictionary&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                    
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;absolute_directory&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setDirectory</span><span class="p">(</span><span class="n">recievedObject</span><span class="p">[</span><span class="s">&#39;absolute_directory&#39;</span><span class="p">])</span>
+                    <span class="k">continue</span>
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;root_name_change&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rootNameChange</span><span class="p">()</span>
+                    <span class="k">continue</span>
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;new_buffer&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">newBuffer</span><span class="p">()</span>
+                    <span class="k">continue</span>
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;clear&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                    <span class="k">continue</span>
+                   
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;shut_down&quot;</span><span class="p">):</span>
+                    <span class="k">break</span>
+               
+                <span class="c">#Test commands</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;test&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;test command received&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                 
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;test_receive&quot;</span><span class="p">):</span>
+                    <span class="k">print</span> <span class="n">recievedObject</span><span class="p">[</span><span class="s">&#39;test_receive&#39;</span><span class="p">]</span>
+                    <span class="k">continue</span>
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;get_variables&quot;</span><span class="p">):</span>
+                    <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span>
+                    <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">absoluteLocation</span>
+                    <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">getName</span><span class="p">()</span>
+                    
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">processRequest</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">recievedObject</span><span class="p">)</span>      
+                    <span class="k">continue</span>
+               
+               
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="k">pass</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Shutting Down&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    
+    <span class="c">#This must be overridden</span>
+    <span class="c">#It specifies how you want to process specific commands for workers   </span></div>
+<div class="viewcode-block" id="Worker.processRequest"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.processRequest">[docs]</a>    <span class="k">def</span> <span class="nf">processRequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If the command passes the generic requests, it is pass down here where this function has to be overwritten to handle the specific worker needs</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: if it is now over ridden</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Must override this method&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Worker.rootNameChange"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.rootNameChange">[docs]</a>    <span class="k">def</span> <span class="nf">rootNameChange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Must be over ridden, so the worker can handle the root name change event</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: if it is not over ridden</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Must override this method&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Worker.newBuffer"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.newBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">newBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Must be over ridden, so the worker can handle the new buffer event</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: if it is not over ridden</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Must override this method&quot;</span><span class="p">)</span>
+
+
+ 
+         
+    <span class="c">#Generic Methods shared by all workers - WorkerDB over rides some stuff</span></div>
+<div class="viewcode-block" id="Worker.setUser"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.setUser">[docs]</a>    <span class="k">def</span> <span class="nf">setUser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the workers user to the user passed by the command string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;User set to </span><span class="si">%(user)s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">{</span><span class="s">&#39;user&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">})</span>
+                </div>
+<div class="viewcode-block" id="Worker.setDirectory"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.setDirectory">[docs]</a>    <span class="k">def</span> <span class="nf">setDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the workers path to the path passed by the command string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Setting Absolute Directory - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">absoluteLocation</span> <span class="o">=</span> <span class="n">directory</span>
+     </div>
+<div class="viewcode-block" id="Worker.getName"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.getName">[docs]</a>    <span class="k">def</span> <span class="nf">getName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mainly used for testing to allow for all workers to reply</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        
+    <span class="c">#This should be called from super class    </span></div>
+<div class="viewcode-block" id="Worker.clear"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Standard function for clearing out the Workers after a new user or experiment as occured</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Cleared Details&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">absoluteLocation</span> <span class="o">=</span> <span class="bp">None</span> 
+        </div>
+<div class="viewcode-block" id="Worker.close"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close&#39;s ZMQ sockets correctly and kills workers</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: if it fails</span>
+<span class="sd">        </span>
+<span class="sd">        Finally:</span>
+<span class="sd">            Kills teh worker (sys.exit())</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Closed ports&quot;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;Failed to close ports&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Failed to close ports&quot;</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+    
+    <span class="c">#Generic method to publish data to the database worker</span></div>
+<div class="viewcode-block" id="Worker.pubData"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.pubData">[docs]</a>    <span class="k">def</span> <span class="nf">pubData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic Function for publishing data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">send</span><span class="p">({</span><span class="s">&#39;command&#39;</span><span class="p">:</span><span class="n">command</span><span class="p">})</span>
+    
+    
+    
+    
+    
+    <span class="c">###Logging Setup</span></div>
+<div class="viewcode-block" id="Worker.setLoggingDetails"><a class="viewcode-back" href="../Workers/worker.html#Worker.Worker.setLoggingDetails">[docs]</a>    <span class="k">def</span> <span class="nf">setLoggingDetails</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic Logging Details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">LOG_FILENAME</span> <span class="o">=</span> <span class="s">&#39;logs/&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39;.log&#39;</span>
+        <span class="n">FORMAT</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%(asctime)s</span><span class="s"> - </span><span class="si">%(levelname)s</span><span class="s"> - </span><span class="si">%(name)s</span><span class="s"> - </span><span class="si">%(message)s</span><span class="s">&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">LOG_FILENAME</span><span class="p">,</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">)</span>
+        
+        <span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> - </span><span class="si">%(levelname)s</span><span class="s"> - </span><span class="si">%(name)s</span><span class="s"> - </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">LOGGING STARTED&quot;</span><span class="p">)</span>
+        
+        </div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c">#Test Cases</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="mi">1200</span>
+    <span class="n">worker</span> <span class="o">=</span> <span class="n">Worker</span><span class="p">()</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">port</span><span class="p">,))</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+    
+    <span class="n">testPush</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PUSH</span><span class="p">)</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+    
+    <span class="k">print</span> <span class="s">&quot;sent command&quot;</span>
+
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span><span class="p">:</span><span class="s">&quot;update_user&quot;</span><span class="p">,</span> <span class="s">&quot;user&quot;</span><span class="p">:</span><span class="s">&quot;Tom&quot;</span><span class="p">})</span>
+
+
+    <span class="c">#v = raw_input(&quot;&gt;&gt;&quot;)</span>
+    <span class="c">#testPush.send_pyobj({&#39;command&#39; : &quot;test_receive&quot;, &quot;test_receive&quot; : v})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;shut_down&quot;</span><span class="p">})</span>
+    
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

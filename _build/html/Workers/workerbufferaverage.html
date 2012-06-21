@@ -1,0 +1,170 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Worker Buffer Average &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Workers" href="workers.html" />
+    <link rel="next" title="Database Worker" href="workerdb.html" />
+    <link rel="prev" title="Worker (Super Class)" href="worker.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerdb.html" title="Database Worker"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="worker.html" title="Worker (Super Class)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" accesskey="U">Workers</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-WorkerBufferAverage">
+<span id="worker-buffer-average"></span><h1>Worker Buffer Average<a class="headerlink" href="#module-WorkerBufferAverage" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="WorkerBufferAverage.WorkerBufferAverage">
+<em class="property">class </em><tt class="descclassname">WorkerBufferAverage.</tt><tt class="descname">WorkerBufferAverage</tt><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage" title="Permalink to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line">Average Buffer Worker</div>
+<div class="line">Takes a constant steam of buffers for a related sample and averages it out</div>
+<div class="line">Utilises the REQ-REP design pattern from ZMQ</div>
+</div>
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.averageBuffer">
+<tt class="descname">averageBuffer</tt><big>(</big><em>buffer</em><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.averageBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.averageBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for averaging out and writing out the averaged buffer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls super clear() and then the workers specific requirements</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.connect">
+<tt class="descname">connect</tt><big>(</big><em>pullPort=False</em>, <em>pubPort=False</em>, <em>replyPort=False</em><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Over ridden Connect Function, adds in the replyport so the Engine can contact this worker for the latest Averaged Buffer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.newBuffer">
+<tt class="descname">newBuffer</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.newBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.newBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line">Clears out the current buffer as expecting new one.</div>
+<div class="line">Increments sample number</div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.processRequest">
+<tt class="descname">processRequest</tt><big>(</big><em>command</em>, <em>obj</em><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.processRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.processRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles any commands passed to the worker if the generic run() method is unable to find a match</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerBufferAverage.WorkerBufferAverage.requestBufferThread">
+<tt class="descname">requestBufferThread</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerBufferAverage.html#WorkerBufferAverage.requestBufferThread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerBufferAverage.WorkerBufferAverage.requestBufferThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a function placed in its own thread, allows the Engine to communicate and ask for the current Averaged Buffer and wait for a Response</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="worker.html"
+                        title="previous chapter">Worker (Super Class)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="workerdb.html"
+                        title="next chapter">Database Worker</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/Workers/workerbufferaverage.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerdb.html" title="Database Worker"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="worker.html" title="Worker (Super Class)"
+             >previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" >Workers</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

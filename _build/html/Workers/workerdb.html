@@ -1,0 +1,199 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Database Worker &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Workers" href="workers.html" />
+    <link rel="next" title="Rolling Average Subtraction Worker" href="workerrollingaveragesubtraction.html" />
+    <link rel="prev" title="Worker Buffer Average" href="workerbufferaverage.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerrollingaveragesubtraction.html" title="Rolling Average Subtraction Worker"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="workerbufferaverage.html" title="Worker Buffer Average"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" accesskey="U">Workers</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-WorkerDB">
+<span id="database-worker"></span><h1>Database Worker<a class="headerlink" href="#module-WorkerDB" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="WorkerDB.WorkerDB">
+<em class="property">class </em><tt class="descclassname">WorkerDB.</tt><tt class="descname">WorkerDB</tt><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB" title="Permalink to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line">Worker for controlling CRUD of database</div>
+<div class="line">Uses SQLAlchemy Library</div>
+<div class="line">Utilises the PUB-SUB design pattern from ZMQ</div>
+</div>
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.buildTables">
+<tt class="descname">buildTables</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.buildTables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.buildTables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses SQL Alchemy to create logtable objects that build the tables inside the database and then allow for data to be written against it</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for properly shutting down worker, includes the sub port</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>Exception: if it failed fo close port</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.connect">
+<tt class="descname">connect</tt><big>(</big><em>pullPort=False</em>, <em>subPort=False</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Over ridden connect funciton to support the subPort and sub type connection</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd>Exception: ZMQ-Error if unable to connect</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.createDB">
+<tt class="descname">createDB</tt><big>(</big><em>user</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.createDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.createDB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Force creates a database in the local mysql</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.subscribe">
+<tt class="descname">subscribe</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.subscribe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function ran inside a thread, WorkerDB waits and responds to any published requests. for controlling what is written to the db and where</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.writeAveragedLocation">
+<tt class="descname">writeAveragedLocation</tt><big>(</big><em>image</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.writeAveragedLocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.writeAveragedLocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>For sending the averaged files name (thusly lcoation to the database)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.writeAveragedSubtactedLocation">
+<tt class="descname">writeAveragedSubtactedLocation</tt><big>(</big><em>image</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.writeAveragedSubtactedLocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.writeAveragedSubtactedLocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>For sending the averaged and subtracted files name (thusly lcoation to the database)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.writeBufferLocation">
+<tt class="descname">writeBufferLocation</tt><big>(</big><em>image</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.writeBufferLocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.writeBufferLocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>For sending the averaged buffer files name (thusly lcoation to the database)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.writeLogToDB">
+<tt class="descname">writeLogToDB</tt><big>(</big><em>logLine</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.writeLogToDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.writeLogToDB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out log line to the database</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerDB.WorkerDB.writeSubtractionLocation">
+<tt class="descname">writeSubtractionLocation</tt><big>(</big><em>image</em><big>)</big><a class="reference internal" href="../_modules/WorkerDB.html#WorkerDB.writeSubtractionLocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerDB.WorkerDB.writeSubtractionLocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>For sending the subtracted files name (thusly lcoation to the database)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="workerbufferaverage.html"
+                        title="previous chapter">Worker Buffer Average</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="workerrollingaveragesubtraction.html"
+                        title="next chapter">Rolling Average Subtraction Worker</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/Workers/workerdb.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerrollingaveragesubtraction.html" title="Rolling Average Subtraction Worker"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="workerbufferaverage.html" title="Worker Buffer Average"
+             >previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" >Workers</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

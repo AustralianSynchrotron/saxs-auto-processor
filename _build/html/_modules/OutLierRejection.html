@@ -1,0 +1,158 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>OutLierRejection &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for OutLierRejection</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">DatFile</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+
+<div class="viewcode-block" id="OutLierRejection"><a class="viewcode-back" href="../Core/outlierrejection.html#OutLierRejection.OutLierRejection">[docs]</a><span class="k">class</span> <span class="nc">OutLierRejection</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    A class that takes a list of DatFiles and changes the reference Valid value to True or False, based on Nathan Cowieson&#39;s Algorithm</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;out lier rejection created&quot;</span>
+
+<div class="viewcode-block" id="OutLierRejection.process"><a class="viewcode-back" href="../Core/outlierrejection.html#OutLierRejection.OutLierRejection.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datFiles</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Takes the list of datFiles and processses their high/low Q&#39;s and checks validity</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            datFiles (list[] of DatFile objects)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Nothing</span>
+<span class="sd">        </span>
+<span class="sd">        Sets the reference valid value to True or False of the DatFile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">datFiles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">datFiles</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ILQ</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">IHQ</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">dat</span> <span class="ow">in</span> <span class="n">datFiles</span><span class="p">:</span>
+                <span class="n">ILQ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">getILQ</span><span class="p">())</span>
+                <span class="n">IHQ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">getIHQ</span><span class="p">())</span>
+                
+            <span class="n">ihqThreshold</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.95</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">IHQ</span><span class="p">))</span>
+            <span class="n">ilqThreshold</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.05</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">ILQ</span><span class="p">))</span>
+            
+            <span class="k">print</span> <span class="s">&quot;IQL Threshold: &quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ilqThreshold</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;IHQ Threshold: &quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ihqThreshold</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">dat</span> <span class="ow">in</span> <span class="n">datFiles</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">dat</span><span class="o">.</span><span class="n">getIHQ</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">ihqThreshold</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">getILQ</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">ilqThreshold</span><span class="p">)):</span>
+                    <span class="k">print</span> <span class="n">dat</span><span class="o">.</span><span class="n">getFileName</span><span class="p">()</span>
+                    <span class="k">print</span> <span class="s">&quot;FAILED&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;valid&quot;</span>
+                    <span class="c">#print dat.getIHQ()</span>
+                    <span class="c">#print dat.getILQ()</span>
+                    <span class="n">dat</span><span class="o">.</span><span class="n">setValid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">outerlierTest</span> <span class="o">=</span> <span class="n">OutLierRejection</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&quot;Running - Outlier Rejection&quot;</span>
+    
+    <span class="n">datC</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&#39;testData/35C_naPhos_nacl_ph7c*&#39;</span><span class="p">)</span>
+    <span class="n">datD</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&#39;testData/35C_naPhos_nacl_ph7d*&#39;</span><span class="p">)</span>
+
+    <span class="n">dC</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    <span class="k">for</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">datC</span><span class="p">:</span>
+        <span class="n">dC</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DatFile</span><span class="o">.</span><span class="n">DatFile</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+    <span class="n">outerlierTest</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">dC</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

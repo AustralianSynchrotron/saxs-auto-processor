@@ -1,0 +1,174 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Rolling Average Subtraction Worker &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Workers" href="workers.html" />
+    <link rel="next" title="Static Image Worker" href="workerstaticimage.html" />
+    <link rel="prev" title="Database Worker" href="workerdb.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerstaticimage.html" title="Static Image Worker"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="workerdb.html" title="Database Worker"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" accesskey="U">Workers</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="rolling-average-subtraction-worker">
+<h1>Rolling Average Subtraction Worker<a class="headerlink" href="#rolling-average-subtraction-worker" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-WorkerRollingAverageSubtraction"></span><dl class="class">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction">
+<em class="property">class </em><tt class="descclassname">WorkerRollingAverageSubtraction.</tt><tt class="descname">WorkerRollingAverageSubtraction</tt><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the constant stream of Static Images, averages them writes to the disk then subtracts and writes to the disk.
+It does this for every sample type</p>
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls super clear(), removes averaged buffer, sets index back to 1 and clears out all datFiles</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.newBuffer">
+<tt class="descname">newBuffer</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.newBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.newBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs to clear out the datFiles, and the averaged Buffer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.processRequest">
+<tt class="descname">processRequest</tt><big>(</big><em>command</em>, <em>obj</em><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.processRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.processRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specific worker commands</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.rootNameChange">
+<tt class="descname">rootNameChange</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.rootNameChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.rootNameChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Worker needs to clear out the current datfiles and increase the sample index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.subAvIntensities">
+<tt class="descname">subAvIntensities</tt><big>(</big><em>datFile</em><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.subAvIntensities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.subAvIntensities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Averages out the datfile againse the other datfiles</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>datFile: the latest datfile</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.subtractBuffer">
+<tt class="descname">subtractBuffer</tt><big>(</big><em>intensities</em>, <em>buffer</em><big>)</big><a class="reference internal" href="../_modules/WorkerRollingAverageSubtraction.html#WorkerRollingAverageSubtraction.subtractBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#WorkerRollingAverageSubtraction.WorkerRollingAverageSubtraction.subtractBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtracts the averaged buffer from the averaged datFiles
+Currently only works on the intensities</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>intensities: Little cheat as it only takes intensities at the moment 
+buffer: corresponding buffer intensities</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="workerdb.html"
+                        title="previous chapter">Database Worker</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="workerstaticimage.html"
+                        title="next chapter">Static Image Worker</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/Workers/workerrollingaveragesubtraction.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="workerstaticimage.html" title="Static Image Worker"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="workerdb.html" title="Database Worker"
+             >previous</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="workers.html" >Workers</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

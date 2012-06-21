@@ -1,0 +1,259 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>DatFile &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for DatFile</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<div class="viewcode-block" id="DatFile"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile">[docs]</a><span class="k">class</span> <span class="nc">DatFile</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    Takes a path to a datFile, parses it and calculates the respective High/Low Q&#39;s</span>
+<span class="sd">     </span>
+<span class="sd">    Args:</span>
+<span class="sd">        datFilePath (String): Absolute location of the datFile as told from the local machine</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datFilePath</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datFilePath</span> <span class="o">=</span> <span class="n">datFilePath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">numLines</span> <span class="o">=</span> <span class="mi">0</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">IQL</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IHQ</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonAir</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processDatFile</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processHighLowQ</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">openDatFile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datFilePath</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span>    
+    
+    <span class="k">def</span> <span class="nf">closeDatFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Dat File did not close&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DatFile.getFileName"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getFileName">[docs]</a>    <span class="k">def</span> <span class="nf">getFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Returns the file name of the datFile</span>
+<span class="sd">        | eg: datFile1.dat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datFilePath</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="DatFile.getBaseFileName"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getBaseFileName">[docs]</a>    <span class="k">def</span> <span class="nf">getBaseFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Returns the base name of the sample type</span>
+<span class="sd">        | eg: SampleType1_1555.dat becomes SampleType1.dat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fileName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getFileName</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">fileName</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">h</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">h</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">g</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span>
+        <span class="k">return</span> <span class="n">g</span> <span class="o">+</span> <span class="s">&quot;.dat&quot;</span>
+</div>
+    <span class="k">def</span> <span class="nf">getDatFilePath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">datFilePath</span>
+    
+    <span class="k">def</span> <span class="nf">isValid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span>
+        
+
+<div class="viewcode-block" id="DatFile.getq"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getq">[docs]</a>    <span class="k">def</span> <span class="nf">getq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns q values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span>
+    </div>
+<div class="viewcode-block" id="DatFile.getIntensities"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getIntensities">[docs]</a>    <span class="k">def</span> <span class="nf">getIntensities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns Intensities</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensities</span>
+    </div>
+<div class="viewcode-block" id="DatFile.getErrors"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getErrors">[docs]</a>    <span class="k">def</span> <span class="nf">getErrors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns Errors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">errors</span>
+ </div>
+    <span class="k">def</span> <span class="nf">setq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
+        
+    <span class="k">def</span> <span class="nf">setIntensities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intensities</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensities</span> <span class="o">=</span> <span class="n">intensities</span>
+        
+    <span class="k">def</span> <span class="nf">setErrors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">errors</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="n">errors</span>
+    
+    <span class="k">def</span> <span class="nf">setNumLines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numLines</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numLines</span> <span class="o">=</span> <span class="n">numLines</span>
+        
+    <span class="k">def</span> <span class="nf">setValid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="n">valid</span>
+        
+    <span class="k">def</span> <span class="nf">processHighLowQ</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">findILQ</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">findIHQ</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">findILQ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="mi">3</span> <span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ILQ</span>  <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intensities</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">])</span>
+        <span class="c">#self.ILQ = float(sum(self.ILQ)) / len(self.ILQ)</span>
+    
+    <span class="k">def</span> <span class="nf">findIHQ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">IHQ</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">intensities</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">])</span>
+        
+        
+<div class="viewcode-block" id="DatFile.processDatFile"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.processDatFile">[docs]</a>    <span class="k">def</span> <span class="nf">processDatFile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Process the 3 column datfile placing each column data into its correct type</span>
+<span class="sd">        | Based off some code by Nathan Cowieson</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">f</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">openDatFile</span><span class="p">()</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">numLines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">b</span> <span class="o">=</span>  <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">intensities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+            <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="n">numLines</span> <span class="o">=</span> <span class="n">numLines</span> <span class="o">+</span> <span class="mi">1</span>
+
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">closeDatFile</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setNumLines</span><span class="p">(</span><span class="n">numLines</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="DatFile.getValues"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getValues">[docs]</a>    <span class="k">def</span> <span class="nf">getValues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary of all the values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span> <span class="s">&#39;q&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="s">&#39;intensities&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensities</span><span class="p">,</span> <span class="s">&#39;errros&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="p">}</span>
+        </div>
+    <span class="k">def</span> <span class="nf">reprocessDatFile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processDatFile</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="DatFile.getIHQ"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getIHQ">[docs]</a>    <span class="k">def</span> <span class="nf">getIHQ</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns High Q</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">IHQ</span> 
+    </div>
+<div class="viewcode-block" id="DatFile.getILQ"><a class="viewcode-back" href="../Core/datFile.html#DatFile.DatFile.getILQ">[docs]</a>    <span class="k">def</span> <span class="nf">getILQ</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns Low Q</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ILQ</span>
+    
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">DatFile</span><span class="p">(</span><span class="s">&quot;../data/dat/air_1_0001.dat&quot;</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">b</span><span class="o">.</span><span class="n">getFileName</span><span class="p">()</span>
+
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

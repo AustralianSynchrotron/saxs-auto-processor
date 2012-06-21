@@ -1,0 +1,171 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>LogLine &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for LogLine</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> 
+
+<div class="viewcode-block" id="LogLine"><a class="viewcode-back" href="../Core/logline.html#LogLine.LogLine">[docs]</a><span class="k">class</span> <span class="nc">LogLine</span><span class="p">:</span>    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    Class for parsing each log line into an XML format so to all easy data retrieval </span>
+<span class="sd">    Args:</span>
+<span class="sd">        line (String): the logline that you want to parse</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="n">line</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xmlify</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getAttributes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getValueDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">)</span>
+        
+    
+<div class="viewcode-block" id="LogLine.xmlify"><a class="viewcode-back" href="../Core/logline.html#LogLine.LogLine.xmlify">[docs]</a>    <span class="k">def</span> <span class="nf">xmlify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;makes the logline into and pesudo xml file, which we can access using</span>
+<span class="sd">        xml.etree.element library&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="s">&quot;&lt;?xml version=&#39;1.0&#39;?&gt;&lt;root&gt;</span><span class="si">%s</span><span class="s">&lt;/root&gt;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="n">etree</span><span class="o">.</span><span class="n">ElementTree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">)</span>
+        
+        <span class="c">#Example of line after its been wrapped to be used as an xml string:</span>
+        <span class="c">#&lt;?xml version=&#39;1.0&#39;?&gt;&lt;root&gt;&lt;LOGLINE TimeStamp = &#39;Thu Feb 09 2012 11:44:51.659&#39; NumericTimeStamp = &#39;110162691.659&#39; exptime = &#39;1&#39; Energy = &#39;12&#39; Temp1 = &#39;-273.15&#39; &gt;/home/det/p2_det/images/data/Cycle_2012_1/Sarrac_4661/lineup_1_0001.tif&lt;/LOGLINE&gt;&lt;/root&gt;</span>
+</div>
+<div class="viewcode-block" id="LogLine.getAttributes"><a class="viewcode-back" href="../Core/logline.html#LogLine.LogLine.getAttributes">[docs]</a>    <span class="k">def</span> <span class="nf">getAttributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets all the attributes from the line to then be used to match up an element dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">attribList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">el</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attribList</span><span class="p">:</span>
+                    <span class="n">attribList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="s">&#39;ImageLocation&#39;</span>
+        <span class="n">attribList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">attribList</span>
+        
+
+</div>
+<div class="viewcode-block" id="LogLine.getValueDict"><a class="viewcode-back" href="../Core/logline.html#LogLine.LogLine.getValueDict">[docs]</a>    <span class="k">def</span> <span class="nf">getValueDict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attributeList</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Generates a dictionary of Key(the attribute name) : value </span>
+<span class="sd">        | ImageLocation is manually added as it falls out of the auto generated xml scope</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">attributeList</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">attributeList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;ImageLocation&quot;</span><span class="p">):</span> <span class="c">#this needs to be here as imagelocation has to be forced as its element.text</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">attributeList</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">text</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">attributeList</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">el</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attributeList</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="c">#self.data[&#39;ImageLocation&#39;] = el.text</span>
+</div>
+<div class="viewcode-block" id="LogLine.getValue"><a class="viewcode-back" href="../Core/logline.html#LogLine.LogLine.getValue">[docs]</a>    <span class="k">def</span> <span class="nf">getValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Can just use eg:x logObject.data[&#39;value&#39;] instead of calling this method </span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The &#39;value&#39; specified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+                
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">lineNew</span> <span class="o">=</span> <span class="s">&#39;&lt;LOGLINE TimeStamp = &quot;Wed May 23 2012 16:18:33.038&quot; NumericTimeStamp = &quot;119168313.038&quot; ImageCounter = &quot;1&quot; exptime = &quot;1.000000&quot; SampleTableX = &quot;0.000000&quot; SampleTableY = &quot;0.000000&quot; Energy = &quot;12.000001&quot; Temperature1 = &quot;27.170000&quot; Temperature2 = &quot;-270.000000&quot; WellNumber = &quot;1.000000&quot; SampleType = &quot;1&quot; WashType = &quot;3&quot; SamplePhi = &quot;1.000000&quot; SampleOmega = &quot;-0.085000&quot; SampleChi = &quot;1.400000&quot; SampleX = &quot;208.015625&quot; SampleY = &quot;-7.210000&quot; FilePluginDestination = &quot;FileLOGWRITER1 FileASCII1&quot; FilePluginFileName = &quot;/home/det/p2_det/images/data/Cycle_2012_2/Devlin_5155A/images/dark_5_0018.tif&quot; NORD = &quot;0&quot; Ibs = &quot;0&quot; I0 = &quot;0&quot; It = &quot;0&quot; &gt;/home/det/p2_det/images/data/Cycle_2012_2/Devlin_5155A/images/dark_5_0018.tif&lt;/LOGLINE&gt;&#39;</span>
+	
+    <span class="n">line</span> <span class="o">=</span> <span class="s">&#39;&lt;LOGLINE TimeStamp = &quot;Sun Apr 01 2012 17:25:45.715&quot; NumericTimeStamp = &quot;114679545.715&quot; exptime = &quot;1&quot; SampleTableX = &quot;0&quot; SampleTableY = &quot;-0.00204353&quot; Energy = &quot;12&quot; Temperature1 = &quot;30.548&quot; Temperature2 = &quot;-270&quot; WellNumber = &quot;19&quot; SampleType = &quot;0&quot; WashType = &quot;0&quot; FilePluginDestination = &quot;all&quot; FilePluginFileName = &quot;/home/det/p2_det/images/data/Cycle_2012_1/Melton_4615/P1B7_HCL_PH3_100_NACL_0586.tif&quot; NORD = &quot;9&quot; Ibs = &quot;31460&quot; I0 = &quot;59688&quot; It = &quot;0&quot; &gt;/home/det/p2_det/images/data/Cycle_2012_1/Melton_4615/P1B7_HCL_PH3_100_NACL_0586.tif&lt;/LOGLINE&gt;&#39;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">LogLine</span><span class="p">(</span><span class="n">lineNew</span><span class="p">)</span>
+    <span class="c">#print a.line</span>
+    <span class="c">#a.getAttributes()</span>
+    <span class="c">#print a.data</span>
+    <span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">attributes</span>
+    <span class="k">print</span> <span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&quot;SampleType&quot;</span><span class="p">]</span>
+    
+                
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

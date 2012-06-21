@@ -1,0 +1,695 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Engine &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for Engine</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/python</span>
+
+<span class="c">###BASH start stop</span>
+<span class="c">#screen -dmS &quot;engine&quot; &quot;./engine.py&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">epics</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+
+<span class="kn">from</span> <span class="nn">Core.EngineFunctions</span> <span class="kn">import</span> <span class="n">getString</span> <span class="k">as</span> <span class="n">getString</span>
+<span class="kn">from</span> <span class="nn">Core.EngineFunctions</span> <span class="kn">import</span> <span class="n">testStringChange</span> <span class="k">as</span> <span class="n">testStringChange</span>
+<span class="kn">from</span> <span class="nn">Core.EngineFunctions</span> <span class="kn">import</span> <span class="n">createFolderStructure</span> <span class="k">as</span> <span class="n">createFolderStructure</span>
+<span class="kn">from</span> <span class="nn">Core.RootName</span> <span class="kn">import</span> <span class="n">changeInRootName</span>
+
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">LogWatcher</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">LogLine</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">DatFile</span>
+
+
+<div class="viewcode-block" id="Engine"><a class="viewcode-back" href="../engine.html#Engine.Engine">[docs]</a><span class="k">class</span> <span class="nc">Engine</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    Is the goto man for controlling the sequence of events that will occur after a datFile has been created</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;Engine&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoggingDetails</span><span class="p">()</span>
+        
+        <span class="c">#Instantiate class variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="bp">True</span> <span class="c">#For catching index error</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logLines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="c"># Object that will be watching the LiveLogFile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logWatcher</span> <span class="o">=</span> <span class="n">LogWatcher</span><span class="o">.</span><span class="n">LogWatcher</span><span class="p">()</span>
+
+        
+        <span class="c">#SET Correctly in newUser</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liveLog</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datFileLocation</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">previousUser</span> <span class="o">=</span> <span class="bp">None</span> <span class="c">#Used to compare current user against new user (to stop if users click the pv etc)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previousExperiment</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c">#Read all configuration settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setConfiguration</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
+        <span class="c">#ZMQ Class Variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zmqContext</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requestBuffer</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c">#Instantiate all workers, get them all ready to push out into their own thread and connected up</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instanceWorkerDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instantiateWorkers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workers</span><span class="p">)</span>
+        <span class="c">#Connect up workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connectWorkers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instanceWorkerDict</span><span class="p">)</span>    
+    
+<div class="viewcode-block" id="Engine.setConfiguration"><a class="viewcode-back" href="../engine.html#Engine.Engine.setConfiguration">[docs]</a>    <span class="k">def</span> <span class="nf">setConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads the default configuration file that is passed at object creation </span>
+<span class="sd">        The configuration stores the Workers that need to be loaded, whether an Experiment name is being used, this allows for any workers</span>
+<span class="sd">        to be loaded dynamically at run time.        </span>
+<span class="sd">        The Absolute location of the datFiles.</span>
+<span class="sd">        Any PV&#39;s that need to be watched</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Configuration (file): A YAML config file</span>
+<span class="sd">          </span>
+<span class="sd">        Returns:</span>
+<span class="sd">           Nothing</span>
+<span class="sd">           </span>
+<span class="sd">        Sets class Variables:</span>
+<span class="sd">            | self.rootDirectory = The absolute location of the experiments as mounted on the local machine.</span>
+<span class="sd">            | self.userChangePV = The FullPath PV from epics to watch for user/experiment change over.</span>
+<span class="sd">            | self.experimentFolderOn = Switch if they experiment folders are being used.</span>
+<span class="sd">            | self.workrs = List of all workers that need to be instantiated.</span>
+<span class="sd">          </span>
+<span class="sd">        Raises:</span>
+<span class="sd">           IOError: When it is unable to find the configuration</span>
+<span class="sd">        &quot;&quot;&quot;</span>    
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">configuration</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> 
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;Unable to find configuration file (config.yaml, in current directory), exiting.&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span>
+        
+        <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;RootDirectory&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">userChangePV</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;UserChangePV&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experimentFolderOn</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;ExperimentFolderOn&#39;</span><span class="p">)</span>
+        
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">experimentFolderOn</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">workers</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;workers&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Engine.instantiateWorkers"><a class="viewcode-back" href="../engine.html#Engine.Engine.instantiateWorkers">[docs]</a>    <span class="k">def</span> <span class="nf">instantiateWorkers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instantiates each worker as specified by the Configuration </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Workers: A list of string names of each worker</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            instanceDict: A dictionary of Key (Worker Name String): Value (Instantiated Worker Object)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Instantiating all workers&quot;</span><span class="p">)</span>
+        <span class="n">instanceDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">:</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="s">&#39;Workers.&#39;</span><span class="o">+</span><span class="n">worker</span><span class="p">,</span> <span class="nb">globals</span><span class="p">(),</span> <span class="nb">locals</span><span class="p">(),</span> <span class="p">[</span><span class="n">worker</span><span class="p">])</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">worker</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">v</span><span class="p">()</span>
+            <span class="n">instanceDict</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">instanceDict</span>
+</div>
+<div class="viewcode-block" id="Engine.connectWorkers"><a class="viewcode-back" href="../engine.html#Engine.Engine.connectWorkers">[docs]</a>    <span class="k">def</span> <span class="nf">connectWorkers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instanceDict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Connects all Workers to required ZMQ sockets</span>
+<span class="sd">        Loads each worker into a Daemon Thread</span>
+<span class="sd">        Uses Push for all workers</span>
+<span class="sd">        PUB/SUB for WorkerDB</span>
+<span class="sd">        REQ/REP for WorkerBufferAverage</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            instanceDict (dictionary): Dictionary created from instantiateWorkers</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Nothing</span>
+<span class="sd">        </span>
+<span class="sd">        Sets Class Variables:</span>
+<span class="sd">            | self.connectedWorkers = Dictionary - key, Worker(string): push port(string)</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pushPort</span> <span class="o">=</span> <span class="mi">2000</span>
+        <span class="n">pubPort</span> <span class="o">=</span> <span class="mi">1998</span>
+        <span class="n">bufferRequestPort</span> <span class="o">=</span> <span class="mi">1999</span>
+        
+        <span class="c">#Actual Worker Threads</span>
+        <span class="n">workerThreads</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c">#Which worker, and which port are they on</span>
+        <span class="n">workerPortLocation</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c">#Start up a dictionary of threads, so we know where all the workers are        </span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="n">instanceDict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">worker</span> <span class="o">==</span> <span class="s">&quot;WorkerBufferAverage&quot;</span><span class="p">):</span>
+                <span class="n">workerThreads</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">instanceDict</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">pushPort</span><span class="p">,</span> <span class="n">pubPort</span><span class="p">,</span> <span class="n">bufferRequestPort</span><span class="p">))</span>
+                <span class="n">workerPortLocation</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="n">pushPort</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">requestBuffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmqContext</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">requestBuffer</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">bufferRequestPort</span><span class="p">))</span>
+                <span class="n">pushPort</span> <span class="o">=</span> <span class="n">pushPort</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">workerThreads</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">instanceDict</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">pushPort</span><span class="p">,</span> <span class="n">pubPort</span><span class="p">,))</span>                            
+                <span class="n">workerPortLocation</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="n">pushPort</span> <span class="c">#So we know where to send commands</span>
+                <span class="n">pushPort</span> <span class="o">=</span> <span class="n">pushPort</span> <span class="o">+</span> <span class="mi">1</span>
+            
+        <span class="c">#Set all workers as Daemon threads (so they all die when we close the application)</span>
+        <span class="k">for</span> <span class="n">workerThread</span> <span class="ow">in</span> <span class="n">workerThreads</span><span class="p">:</span>
+            <span class="n">workerThreads</span><span class="p">[</span><span class="n">workerThread</span><span class="p">]</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            
+        <span class="c">#Start all the threads</span>
+        <span class="k">for</span> <span class="n">workerThread</span> <span class="ow">in</span> <span class="n">workerThreads</span><span class="p">:</span>
+            <span class="n">workerThreads</span><span class="p">[</span><span class="n">workerThread</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span> <span class="c">#short pause to let them properly bind/connect their ports</span>
+            
+        <span class="c">#Set up ZMQ context for each worker</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="n">workerPortLocation</span><span class="p">:</span>
+            <span class="n">workerPortLocation</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmqContext</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PUSH</span><span class="p">)</span>
+        
+        <span class="c">#connect workers to the engine</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">workerPortLocation</span><span class="p">[</span><span class="n">worker</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;All Workers connected and ready&quot;</span><span class="p">)</span>
+
+
+    <span class="c"># Event Watching</span></div>
+<div class="viewcode-block" id="Engine.setUserWatcher"><a class="viewcode-back" href="../engine.html#Engine.Engine.setUserWatcher">[docs]</a>    <span class="k">def</span> <span class="nf">setUserWatcher</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets up a epics.camonitor against the PV set by the configuration file</span>
+<span class="sd">        </span>
+<span class="sd">        Callback:</span>
+<span class="sd">            setUser()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">epics</span><span class="o">.</span><span class="n">camonitor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">userChangePV</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">setUser</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Engine.watchForLogLines"><a class="viewcode-back" href="../engine.html#Engine.Engine.watchForLogLines">[docs]</a>    <span class="k">def</span> <span class="nf">watchForLogLines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logLocation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates an object for watching the logfile that callsback when ever a new line has been written</span>
+<span class="sd">        </span>
+<span class="sd">        Callback:</span>
+<span class="sd">            lineCreated()</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>      
+        <span class="bp">self</span><span class="o">.</span><span class="n">logWatcher</span><span class="o">.</span><span class="n">setLocation</span><span class="p">(</span><span class="n">logLocation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logWatcher</span><span class="o">.</span><span class="n">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lineCreated</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logWatcher</span><span class="o">.</span><span class="n">watch</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="Engine.killLogWatcher"><a class="viewcode-back" href="../engine.html#Engine.Engine.killLogWatcher">[docs]</a>    <span class="k">def</span> <span class="nf">killLogWatcher</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Kills Log Watcher Object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logWatcher</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+
+
+
+        </div>
+<div class="viewcode-block" id="Engine.setUser"><a class="viewcode-back" href="../engine.html#Engine.Engine.setUser">[docs]</a>    <span class="k">def</span> <span class="nf">setUser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">char_value</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Sets the User for the Engine, and all workers.</span>
+<span class="sd">        | Is called when the PV changes</span>
+<span class="sd">        | Checks new user value against previous user</span>
+<span class="sd">        | If matching values, nothing occurs</span>
+<span class="sd">        | Calls newUser(user) if it is a new user</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            char_value (string): String value of the PV, should be the full path to the image locations relative to epics</span>
+<span class="sd">            **kw (dict): remaining values returned from epics</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;User Change Event&quot;</span><span class="p">)</span>
+        
+        <span class="c">#user = getUser(char_value)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experimentFolderOn</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;Experiment folder on&quot;</span>
+            <span class="n">experiment</span> <span class="o">=</span> <span class="n">getString</span><span class="p">(</span><span class="n">char_value</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">getString</span><span class="p">(</span><span class="n">char_value</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">)</span>
+            
+            <span class="k">print</span> <span class="s">&quot;EXPERIMENT : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">experiment</span>
+            <span class="k">print</span> <span class="s">&quot;USER : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">user</span>
+
+            <span class="c">#Test user change</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">testStringChange</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">previousUser</span><span class="p">)):</span>
+                <span class="k">print</span> <span class="s">&quot;USER CHANGE, SO YES experiment CHANGE </span><span class="se">\n</span><span class="s">RUN user.change with experiment!&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">previousUser</span> <span class="o">=</span> <span class="n">user</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">previousExperiment</span> <span class="o">=</span> <span class="n">experiment</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">newUser1</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;NO USER CHANAGE&quot;</span>
+                
+                <span class="k">print</span> <span class="s">&quot;BETTER CHECK IF USER CHANGED!&quot;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">testStringChange</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">previousExperiment</span><span class="p">)):</span>
+                    <span class="k">print</span> <span class="s">&quot;EXPERUIMENT CHANGE!&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">previousExperiment</span> <span class="o">=</span> <span class="n">experiment</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">newExperiment</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;Nothing changed, user nor experiment&quot;</span>
+                    <span class="k">pass</span>
+            
+
+        <span class="c">#experiment filder is off, onlty just againse user</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;exerpimetn folder off, on;y check user&quot;</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">getString</span><span class="p">(</span><span class="n">char_value</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;USER: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">user</span>
+            
+            <span class="k">if</span> <span class="n">testStringChange</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">previousUser</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&quot;USER HAS CHANGED, run new user&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">previousUser</span> <span class="o">=</span> <span class="n">user</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">newUser1</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;NO USER CHANGE DO NOTHING&quot;</span>
+                <span class="k">pass</span>
+            
+                
+                
+                
+        <span class="sd">&quot;&quot;&quot;    </span>
+<span class="sd">        else:</span>
+<span class="sd">            user = getUser(char_value, -2)</span>
+<span class="sd">            if (testUserChange(user, self.previousUser)):</span>
+<span class="sd">                self.previousUser = user</span>
+<span class="sd">                self.newUser(user)</span>
+<span class="sd">            else:</span>
+<span class="sd">                pass</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        </div>
+    <span class="k">def</span> <span class="nf">newExperiment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;function new experiment&quot;</span>
+        
+    <span class="k">def</span> <span class="nf">newUser1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;function new user&quot;</span>
+        
+<div class="viewcode-block" id="Engine.newUser"><a class="viewcode-back" href="../engine.html#Engine.Engine.newUser">[docs]</a>    <span class="k">def</span> <span class="nf">newUser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        New User has been found, need to communicate to myself and all workers the new details</span>
+<span class="sd">        A new Database is created</span>
+<span class="sd">        And the engine commences watching the logfile.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            user (string): string value of the user</span>
+<span class="sd">         </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;New User Requested&quot;</span><span class="p">)</span>
+        <span class="c">#Reset class variables for controlling logic and data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logLines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">liveLog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">+</span> <span class="s">&quot;/images/livelogfile.log&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datFileLocation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">+</span> <span class="s">&quot;/raw_dat/&quot;</span>
+        
+        <span class="c">#Generate Directory Structure</span>
+        <span class="n">createFolderStructure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Directory Structure Created&quot;</span><span class="p">)</span>
+        
+        <span class="c">#Update all workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;update_user&quot;</span><span class="p">,</span> <span class="s">&quot;user&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;absolute_directory&quot;</span><span class="p">,</span><span class="s">&quot;absolute_directory&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">rootDirectory</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">})</span>
+        
+        
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">createDB</span><span class="p">()</span>
+        
+        <span class="c">#Start waiting for log to appear</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watchForLogLines</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">liveLog</span><span class="p">)</span> <span class="c"># Start waiting for the Log</span>
+
+</div>
+<div class="viewcode-block" id="Engine.run"><a class="viewcode-back" href="../engine.html#Engine.Engine.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts the epics watcher for user change</span>
+<span class="sd">        Keeps on running as the main thread</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">setUserWatcher</span><span class="p">()</span> <span class="c">#Start epics call back</span>
+              
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="c">#Keep the script running</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        
+ 
+ 
+ 
+ </div>
+<div class="viewcode-block" id="Engine.lineCreated"><a class="viewcode-back" href="../engine.html#Engine.Engine.lineCreated">[docs]</a>    <span class="k">def</span> <span class="nf">lineCreated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Here we parse the logline for the Image Location</span>
+<span class="sd">        | it Preliminarily checks against the image type for weather it needs to bother looking for it or not </span>
+<span class="sd">        | Calls processDat if we care for the datFile</span>
+<span class="sd">        | sends the logline to be written out to the database</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            line (string): returned latest line from call back</span>
+<span class="sd">            **kw (dictionary): any more remaining values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">latestLine</span> <span class="o">=</span> <span class="n">LogLine</span><span class="o">.</span><span class="n">LogLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logLines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">latestLine</span><span class="p">)</span>
+        
+        <span class="c">#Send off line to be written to db</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendLogLine</span><span class="p">(</span><span class="n">latestLine</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">latestLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;0&quot;</span> <span class="ow">or</span> <span class="n">latestLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;1&quot;</span><span class="p">):</span>
+            <span class="n">datFile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getDatFile</span><span class="p">(</span><span class="n">latestLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;ImageLocation&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">datFile</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processDat</span><span class="p">(</span><span class="n">latestLine</span><span class="p">,</span> <span class="n">datFile</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Hey, it&#39;s a sample type I just don&#39;t care for!&quot;</span><span class="p">)</span>
+   
+   </div>
+<div class="viewcode-block" id="Engine.getDatFile"><a class="viewcode-back" href="../engine.html#Engine.Engine.getDatFile">[docs]</a>    <span class="k">def</span> <span class="nf">getDatFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullPath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Called from lineCreated, is called if we want the datFile from the log line</span>
+<span class="sd">        | It looks in the location created from the configuration file for the corresponding datFile</span>
+<span class="sd">        | Times out after 3seconds and passes</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            fullPath (String): Absolute location of the datFile from the LogLine</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            | datFile object created from the static image</span>
+<span class="sd">            | or, returns False if nothing is found</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">imageName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fullPath</span><span class="p">)</span>
+        <span class="n">imageName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">imageName</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">datFileName</span> <span class="o">=</span> <span class="n">imageName</span> <span class="o">+</span> <span class="s">&quot;.dat&quot;</span>
+
+        
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span> <span class="c">#have a little snooze to make sure the image has been written</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Looking for DatFile </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">datFileName</span><span class="p">)</span>
+   
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datFileLocation</span> <span class="o">+</span> <span class="n">datFileName</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Waiting for the </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">datFileName</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startTime</span> <span class="o">&gt;</span> <span class="mf">3.0</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;DatFile: </span><span class="si">%s</span><span class="s"> - could not be found - SKIPPING&quot;</span> <span class="o">%</span> <span class="n">datFileName</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="n">datFile</span> <span class="o">=</span> <span class="n">DatFile</span><span class="o">.</span><span class="n">DatFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datFileLocation</span> <span class="o">+</span>  <span class="n">datFileName</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;DatFile: </span><span class="si">%s</span><span class="s"> - has been found&quot;</span> <span class="o">%</span> <span class="n">datFileName</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">datFile</span>
+   
+   </div>
+<div class="viewcode-block" id="Engine.processDat"><a class="viewcode-back" href="../engine.html#Engine.Engine.processDat">[docs]</a>    <span class="k">def</span> <span class="nf">processDat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logLine</span><span class="p">,</span> <span class="n">datFile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        </span>
+<span class="sd">        | Here we will decide how to process the datFile</span>
+<span class="sd">        | Sample Types:</span>
+<span class="sd">        | 6 - Water</span>
+<span class="sd">        | 0 - Buffer</span>
+<span class="sd">        | 1 - Static Sample</span>
+<span class="sd">        </span>
+<span class="sd">        | Sample type of DatFile is determined by the logline.  We only currently care for 0 (buffer), or 1 (static Sample)</span>
+<span class="sd">        | Is sample is a buffer, it needs to be passed to WorkerBufferAverage to be processed</span>
+<span class="sd">        | If it is a sample it is passed to all workers to be processed by them if they want</span>
+<span class="sd">        </span>
+<span class="sd">        We check if the Workers need an AveragedBuffer which we then can request from WorkerBufferAverage</span>
+<span class="sd">        We check for a rootname change indicating a new sample which may or may not require a new buffer average</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            logLine (LogLine Object): Latest Logline</span>
+<span class="sd">            datFile (datFile Object): Corresponding DatFile from LogLine</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            IndexError: Raised only on first pass, as we need the current user to check againse the previous user</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">changeInRootName</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logLines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;ImageLocation&quot;</span><span class="p">)),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logLines</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;ImageLocation&quot;</span><span class="p">)))):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;There has been a change in the root name&quot;</span><span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;root_name_change&quot;</span><span class="p">})</span>
+                
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">logLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;0&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;New Buffer!&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;new_buffer&quot;</span><span class="p">})</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;buffer&quot;</span><span class="p">,</span> <span class="s">&quot;buffer&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+                
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">logLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;1&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span><span class="p">):</span>
+                        <span class="n">averagedBuffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">requestAveragedBuffer</span><span class="p">()</span>
+                        <span class="k">print</span> <span class="s">&quot;AVERAGED BUFFER&quot;</span>
+                        <span class="k">print</span> <span class="n">averagedBuffer</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">averagedBuffer</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;averaged_buffer&quot;</span><span class="p">,</span> <span class="s">&quot;averaged_buffer&quot;</span><span class="p">:</span><span class="n">averagedBuffer</span><span class="p">})</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span> <span class="o">=</span> <span class="bp">False</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;static_image&quot;</span><span class="p">,</span> <span class="s">&quot;static_image&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+                            
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;static_image&quot;</span><span class="p">,</span> <span class="s">&quot;static_image&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;So lets average with current buffer!&quot;</span><span class="p">)</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;No change in root name fellas&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="p">(</span><span class="n">logLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;0&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;buffer&quot;</span><span class="p">,</span> <span class="s">&quot;buffer&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="n">logLine</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&quot;SampleType&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;1&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span><span class="p">):</span>
+                        <span class="n">averagedBuffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">requestAveragedBuffer</span><span class="p">()</span>
+                        <span class="k">print</span> <span class="n">averagedBuffer</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">averagedBuffer</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;averaged_buffer&quot;</span><span class="p">,</span> <span class="s">&quot;averaged_buffer&quot;</span><span class="p">:</span><span class="n">averagedBuffer</span><span class="p">})</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">needBuffer</span> <span class="o">=</span> <span class="bp">False</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;static_image&quot;</span><span class="p">,</span> <span class="s">&quot;static_image&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;No averaged Buffer returned unable to perform subtraction&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;static_image&quot;</span><span class="p">,</span> <span class="s">&quot;static_image&quot;</span><span class="p">:</span><span class="n">datFile</span><span class="p">})</span>
+                    
+
+
+       
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">first</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;INDEX ERROR - Should only occur on first pass!&quot;</span><span class="p">)</span>
+                   
+
+
+
+    </div>
+    <span class="k">def</span> <span class="nf">cli</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;exit - to exit&quot;</span>
+                <span class="k">print</span> <span class="s">&quot;workers - sends test command out to find workers that are alive&quot;</span>
+                <span class="k">print</span> <span class="s">&quot;variables - returns all the class variables of each worker&quot;</span>
+                <span class="n">request</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt;&gt; &quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">request</span> <span class="o">==</span> <span class="s">&quot;exit&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">request</span> <span class="o">==</span> <span class="s">&quot;workers&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">test</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">request</span> <span class="o">==</span> <span class="s">&quot;variables&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;get_variables&quot;</span><span class="p">})</span>
+                
+                
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="c">#Generic Methods</span>
+<div class="viewcode-block" id="Engine.sendCommand"><a class="viewcode-back" href="../engine.html#Engine.Engine.sendCommand">[docs]</a>    <span class="k">def</span> <span class="nf">sendCommand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends a structed Dictionary command to all connected Workers</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            command (Dictionary): requested command to be sent</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">[</span><span class="n">worker</span><span class="p">]</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;Incorrect Command datatype, must send a dictionary&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Engine.sendLogLine"><a class="viewcode-back" href="../engine.html#Engine.Engine.sendLogLine">[docs]</a>    <span class="k">def</span> <span class="nf">sendLogLine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends the pass logline to the WorkerDB to be written out to the database</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            line (LogLine object): LogLine object that you want to write to the DB</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">[</span><span class="s">&#39;WorkerDB&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;log_line&quot;</span><span class="p">,</span> <span class="s">&quot;line&quot;</span><span class="p">:</span><span class="n">line</span><span class="p">})</span>
+        </div>
+<div class="viewcode-block" id="Engine.createDB"><a class="viewcode-back" href="../engine.html#Engine.Engine.createDB">[docs]</a>    <span class="k">def</span> <span class="nf">createDB</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the specified database for the new user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">connectedWorkers</span><span class="p">[</span><span class="s">&#39;WorkerDB&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;createDB&quot;</span><span class="p">})</span>
+        </div>
+<div class="viewcode-block" id="Engine.requestAveragedBuffer"><a class="viewcode-back" href="../engine.html#Engine.Engine.requestAveragedBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">requestAveragedBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Request from the WorkerBufferAverage for the current averaged buffer</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Averaged Buffer List</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">requestBuffer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;request_buffer&quot;</span><span class="p">)</span>
+        <span class="nb">buffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">requestBuffer</span><span class="o">.</span><span class="n">recv_pyobj</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">buffer</span>
+    
+    </div>
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&#39;command&#39;</span><span class="p">:</span><span class="s">&quot;test&quot;</span><span class="p">})</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="Engine.exit"><a class="viewcode-back" href="../engine.html#Engine.Engine.exit">[docs]</a>    <span class="k">def</span> <span class="nf">exit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Properly shuts down all the workers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sendCommand</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;shut_down&quot;</span><span class="p">})</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+        
+        </div>
+<div class="viewcode-block" id="Engine.setLoggingDetails"><a class="viewcode-back" href="../engine.html#Engine.Engine.setLoggingDetails">[docs]</a>    <span class="k">def</span> <span class="nf">setLoggingDetails</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current generic logging setup using the python logging module</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">LOG_FILENAME</span> <span class="o">=</span> <span class="s">&#39;logs/&#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">+</span><span class="s">&#39;.log&#39;</span>
+        <span class="n">FORMAT</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%(asctime)s</span><span class="s"> - </span><span class="si">%(levelname)s</span><span class="s"> - </span><span class="si">%(name)s</span><span class="s"> - </span><span class="si">%(message)s</span><span class="s">&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">LOG_FILENAME</span><span class="p">,</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">)</span>
+        
+        <span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> - </span><span class="si">%(levelname)s</span><span class="s"> - </span><span class="si">%(name)s</span><span class="s"> - </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">LOGGING STARTED&quot;</span><span class="p">)</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">eng</span> <span class="o">=</span> <span class="n">Engine</span><span class="p">(</span><span class="s">&quot;settings.conf&quot;</span><span class="p">)</span>
+    <span class="n">eng</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

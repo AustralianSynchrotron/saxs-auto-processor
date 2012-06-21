@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>WorkerBufferAverage &mdash; Auto-Processor 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Auto-Processor 0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for WorkerBufferAverage</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">Worker</span> <span class="kn">import</span> <span class="n">Worker</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">AverageList</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">DatFile</span>
+<span class="kn">from</span> <span class="nn">Core</span> <span class="kn">import</span> <span class="n">DatFileWriter</span>
+
+
+
+<div class="viewcode-block" id="WorkerBufferAverage"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage">[docs]</a><span class="k">class</span> <span class="nc">WorkerBufferAverage</span><span class="p">(</span><span class="n">Worker</span><span class="p">):</span>  
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. codeauthor:: Jack Dwyer &lt;jackjack.dwyer@gmail.com&gt;</span>
+<span class="sd">    | Average Buffer Worker</span>
+<span class="sd">    | Takes a constant steam of buffers for a related sample and averages it out</span>
+<span class="sd">    | Utilises the REQ-REP design pattern from ZMQ</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+      
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Worker</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&quot;Worker Buffer Average&quot;</span><span class="p">)</span>
+        
+        <span class="c">#Specific Class Variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagedBuffer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bufferIndex</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagedIntensities</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">previousName</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        
+        <span class="c">#specific ZMQ </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REP</span><span class="p">)</span>
+
+    
+<div class="viewcode-block" id="WorkerBufferAverage.connect"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pullPort</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">pubPort</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">replyPort</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Over ridden Connect Function, adds in the replyport so the Engine can contact this worker for the latest Averaged Buffer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pullPort</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pullPort</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">pubPort</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pubPort</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="p">(</span><span class="n">replyPort</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">replyPort</span><span class="p">))</span>
+                
+                <span class="n">replyThread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">requestBufferThread</span><span class="p">)</span>
+                <span class="n">replyThread</span><span class="o">.</span><span class="n">setDaemon</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">replyThread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Connected Pull Port at: </span><span class="si">%(pullPort)s</span><span class="s"> - Publish Port at: </span><span class="si">%(pubPort)s</span><span class="s"> - Reply Port at: </span><span class="si">%(replyPort)s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">{</span><span class="s">&#39;pullPort&#39;</span> <span class="p">:</span> <span class="n">pullPort</span><span class="p">,</span> <span class="s">&#39;pubPort&#39;</span> <span class="p">:</span> <span class="n">pubPort</span><span class="p">,</span> <span class="s">&#39;replyPort&#39;</span><span class="p">:</span><span class="n">replyPort</span><span class="p">})</span>
+        
+        <span class="k">except</span><span class="p">:</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;ZMQ Error - Unable to connect&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;ZMQ Error - Unable to connect&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    
+        </div>
+<div class="viewcode-block" id="WorkerBufferAverage.processRequest"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.processRequest">[docs]</a>    <span class="k">def</span> <span class="nf">processRequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>    
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handles any commands passed to the worker if the generic run() method is unable to find a match</span>
+<span class="sd">        &quot;&quot;&quot;</span>            
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Processing Received object&quot;</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s">&#39;command&#39;</span><span class="p">])</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">command</span> <span class="o">==</span> <span class="s">&quot;buffer&quot;</span><span class="p">):</span>
+            <span class="nb">buffer</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;buffer&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Buffer Sample&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">averageBuffer</span><span class="p">(</span><span class="nb">buffer</span><span class="p">)</span>
+            
+            
+            </div>
+<div class="viewcode-block" id="WorkerBufferAverage.averageBuffer"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.averageBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">averageBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">buffer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function for averaging out and writing out the averaged buffer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">buffer</span><span class="p">)</span>
+        <span class="n">intensities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="nb">buffer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">:</span>
+            <span class="n">intensities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">buffer</span><span class="o">.</span><span class="n">getIntensities</span><span class="p">())</span>
+            
+        <span class="n">datName</span> <span class="o">=</span> <span class="s">&quot;avg_buffer_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bufferIndex</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span><span class="nb">buffer</span><span class="o">.</span><span class="n">getBaseFileName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagedIntensities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">averageList</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">intensities</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">datWriter</span><span class="o">.</span><span class="n">writeFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">absoluteLocation</span> <span class="o">+</span> <span class="s">&quot;/avg/&quot;</span><span class="p">,</span> <span class="n">datName</span><span class="p">,</span> <span class="p">{</span> <span class="s">&#39;q&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">getq</span><span class="p">(),</span> <span class="s">&quot;i&quot;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">averagedIntensities</span><span class="p">,</span> <span class="s">&#39;errors&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">getErrors</span><span class="p">()})</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previousName</span> <span class="o">==</span> <span class="n">datName</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pub</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&quot;command&quot;</span><span class="p">:</span><span class="s">&quot;averaged_buffer&quot;</span><span class="p">,</span> <span class="s">&quot;location&quot;</span><span class="p">:</span><span class="n">datName</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">previousName</span> <span class="o">=</span> <span class="n">datName</span>
+
+
+
+    </div>
+<div class="viewcode-block" id="WorkerBufferAverage.requestBufferThread"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.requestBufferThread">[docs]</a>    <span class="k">def</span> <span class="nf">requestBufferThread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is a function placed in its own thread, allows the Engine to communicate and ask for the current Averaged Buffer and wait for a Response</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span> <span class="c">#wait for request of buffer</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">test</span> <span class="o">==</span> <span class="s">&#39;test&#39;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">(</span><span class="s">&quot;REQUESTED DATA&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">test</span> <span class="o">==</span> <span class="s">&quot;request_buffer&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">averagedIntensities</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">averagedIntensities</span><span class="p">)</span>      
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">pass</span>   
+
+
+
+</div>
+    <span class="k">def</span> <span class="nf">rootNameChange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Root Name Change Called - No Action Required&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WorkerBufferAverage.newBuffer"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.newBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">newBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        | Clears out the current buffer as expecting new one.</span>
+<span class="sd">        | Increments sample number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagedBuffer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bufferIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bufferIndex</span> <span class="o">+</span> <span class="mi">1</span>
+    </div>
+<div class="viewcode-block" id="WorkerBufferAverage.clear"><a class="viewcode-back" href="../Workers/workerbufferaverage.html#WorkerBufferAverage.WorkerBufferAverage.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calls super clear() and then the workers specific requirements</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Worker</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averagedBuffer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bufferIndex</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c">#Test Cases</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="mi">1200</span>
+    
+    <span class="n">worker</span> <span class="o">=</span> <span class="n">WorkerBufferAverage</span><span class="p">()</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">connect</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">port</span><span class="p">,))</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+    
+    <span class="n">testPush</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PUSH</span><span class="p">)</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&quot;tcp://127.0.0.1:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;averaged_buffer&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;static_image&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;averaged_buffer&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;static_image&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;test&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;averaged_buffer&quot;</span><span class="p">})</span>
+    <span class="n">testPush</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">({</span><span class="s">&#39;command&#39;</span> <span class="p">:</span> <span class="s">&quot;shut_down&quot;</span><span class="p">})</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Auto-Processor 0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Jack Dwyer.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
