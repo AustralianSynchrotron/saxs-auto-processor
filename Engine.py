@@ -7,11 +7,11 @@
 import logging
 import sys
 import time
-import epics
 import os
 
 
 try:
+    import epics
     import zmq
     import yaml
 except ImportError:
