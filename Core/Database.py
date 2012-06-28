@@ -1,10 +1,12 @@
+import sys
 try:
     from sqlalchemy import create_engine
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import Column, Integer, String
-except ImportError:
-    pass
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 
 
 class Database():

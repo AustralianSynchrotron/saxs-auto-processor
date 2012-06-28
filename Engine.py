@@ -14,8 +14,9 @@ try:
     import epics
     import zmq
     import yaml
-except ImportError:
-    pass
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 
 from threading import Thread
 

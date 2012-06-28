@@ -5,8 +5,9 @@ sys.path.append("../")
 try:
     import zmq
     import MySQLdb as mysql
-except ImportError:
-    pass
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 import time
 from threading import Thread
 from Worker import Worker
@@ -15,8 +16,9 @@ from Core import TableBuilder
 
 try:
     from sqlalchemy import *
-except ImportError:
-    pass
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 
 class WorkerDB(Worker):  
     """

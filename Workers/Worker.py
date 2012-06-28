@@ -1,8 +1,9 @@
+import sys
 try:
     import zmq
-except ImportError:
-    pass
-import sys
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 sys.path.append("../")
 import time
 import logging

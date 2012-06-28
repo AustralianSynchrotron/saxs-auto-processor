@@ -11,13 +11,15 @@ Class for wrapping the SQL alchemy commands for entering data into the database
 """
 TODO: Work out the table structure.. as I can't make a db until i have read the first line of the log file
 """
+import sys
 try:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import Column, Integer, String
     from sqlalchemy.ext.declarative import declarative_base
-except ImportError:
-    pass
+except ImportError, e:
+    print "ERROR:", e, "which is essential to run auto-processor."
+    sys.exit(2)
 
 
 
