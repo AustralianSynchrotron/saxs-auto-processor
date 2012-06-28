@@ -10,8 +10,12 @@ import time
 import epics
 import os
 
-import zmq
-import yaml
+
+try:
+    import zmq
+    import yaml
+except ImportError:
+    pass
 
 from threading import Thread
 
@@ -27,7 +31,6 @@ from Core import DatFile
 
 class Engine():
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     Is the goto man for controlling the sequence of events that will occur after a datFile has been created
     
     """
@@ -229,7 +232,7 @@ class Engine():
         
         Args:
             char_value (string): String value of the PV, should be the full path to the image locations relative to epics
-            **kw (dict): remaining values returned from epics
+            \*\*kw (dict): remaining values returned from epics
             
         """
         self.logger.info("User Change Event")
@@ -361,7 +364,7 @@ class Engine():
         
         Args:
             line (string): returned latest line from call back
-            **kw (dictionary): any more remaining values
+            \*\*kw (dictionary): any more remaining values
         """
         
         latestLine = LogLine.LogLine(line)

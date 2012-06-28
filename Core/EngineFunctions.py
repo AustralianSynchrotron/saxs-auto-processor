@@ -1,6 +1,5 @@
 """
-.. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
-Collection of Functions used by the Engine
+   Collection of Functions used by the Engine
 """
 
 import os

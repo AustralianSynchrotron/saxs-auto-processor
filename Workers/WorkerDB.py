@@ -2,16 +2,21 @@ import logging
 import sys
 sys.path.append("../")
 
-import zmq
+try:
+    import zmq
+    import MySQLdb as mysql
+except ImportError:
+    pass
 import time
 from threading import Thread
 from Worker import Worker
 from Core import DatFile
 from Core import TableBuilder
-import MySQLdb as mysql
 
-from sqlalchemy import *
-
+try:
+    from sqlalchemy import *
+except ImportError:
+    pass
 
 class WorkerDB(Worker):  
     """

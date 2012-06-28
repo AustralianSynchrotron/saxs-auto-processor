@@ -1,6 +1,5 @@
 class AverageList:
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     An Object that takes a list of lists as the parameter and averages them out
     """
     

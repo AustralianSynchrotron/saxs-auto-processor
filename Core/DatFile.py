@@ -2,7 +2,6 @@ import os
 
 class DatFile:
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     Takes a path to a datFile, parses it and calculates the respective High/Low Q's
      
     Args:

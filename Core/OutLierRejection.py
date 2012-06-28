@@ -3,7 +3,6 @@ import glob
 
 class OutLierRejection():
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     A class that takes a list of DatFiles and changes the reference Valid value to True or False, based on Nathan Cowieson's Algorithm
     """
     

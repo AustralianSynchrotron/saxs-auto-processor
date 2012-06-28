@@ -2,10 +2,9 @@ import xml.etree.ElementTree
 
 class LogLine:    
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     Class for parsing each log line into an XML format so to all easy data retrieval 
     Args:
-        line (String): the logline that you want to parse
+    |    line (String): the logline that you want to parse
     """
     
     def __init__(self, line):
@@ -18,8 +17,10 @@ class LogLine:
         
     
     def xmlify(self):
-        """makes the logline into and pesudo xml file, which we can access using
-        xml.etree.element library"""
+        """
+        makes the logline into and pesudo xml file, which we can access using
+        xml.etree.element library
+        """
         self.line = "<?xml version='1.0'?><root>%s</root>" % self.line
         self.line = xml.etree.ElementTree.fromstring(self.line)
         

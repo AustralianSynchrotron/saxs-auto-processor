@@ -3,7 +3,6 @@ import os
 
 class DatFileWriter:
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     An class that writes out datFiles created into a similar format as scatterbrain
     
     Args:

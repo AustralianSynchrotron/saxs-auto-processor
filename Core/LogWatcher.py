@@ -6,7 +6,6 @@ from threading import Thread
 
 class LogWatcher():
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     An object that watches the specified log file for changes to the log lines,
     it returns every new line
     """

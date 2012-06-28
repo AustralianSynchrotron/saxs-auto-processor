@@ -2,7 +2,10 @@ import logging
 import sys
 sys.path.append("../")
 
-import zmq
+try:
+    import zmq
+except ImportError:
+    pass
 import time
 from threading import Thread
 from Worker import Worker
