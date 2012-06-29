@@ -24,6 +24,9 @@ class PipelineLite:
         self.outputPath = outputPath
 
     def runPipeline(self):
+        """
+        Runs pipeline with multiple analysis steps.
+        """
         # autorg modeling
         autorg_output = self.autorg()
         # datgnom modeling
@@ -39,6 +42,10 @@ class PipelineLite:
         
     
     def autorg(self):
+        """
+        Automatically computes Rg and I(0) using the Guinier approximation, 
+        estimates data quality, finds the beginning of the useful data range.
+        """
         print '#---- autorg -----------------------#'
         command_list = ['autorg', '-f', 'ssv', self.datFilePath]
         process = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -48,6 +55,10 @@ class PipelineLite:
         return output 
     
     def datgnom(self, autorg_output):
+        """
+        Estimates Dmax, computes the distance distribution function p(r) and the 
+        regularized scattering curve.
+        """
         print '#---- datgnom ----------------------#'    
         valuePoints = autorg_output.split(" ")
         rg = valuePoints[0]
@@ -73,6 +84,9 @@ class PipelineLite:
         return outfile_path 
     
     def datporod(self, outfile_path):
+        """
+        Computes Porod volume from the regularised scattering curve.
+        """
         print '#---- datporod ---------------------#' 
         command_list = ['datporod', outfile_path]
         process = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -83,12 +97,18 @@ class PipelineLite:
         return porod_volume
     
     def saveDatporodVolume(self, porod_volume):
+        """
+        Stores value of Porod volume into database. 
+        """
         print '#---- save porod volume------------#'    
         print 'porod_volume =', porod_volume, '\n'
         "TODO: save value of porod volume into database."
 
     
     def dammif(self, outfile_path):
+        """
+        Creates an ab initio dummy atoms model, estimates DAM volume.
+        """
         print '#---- dammif ----------------------#'    
         prefix = outfile_path[:-4] + "_0"
         command_list = ['dammif', '--prefix=%s' % prefix, '--mode=fast', '--symmetry=P1', '--unit=n', outfile_path]
@@ -125,12 +145,22 @@ class PipelineLite:
         return dam_volume 
     
     def saveDammifVolume(self, dam_volume):
+        """
+        Stroes value of DAM volume into database.
+        """
         print '#---- save dam volume -------------#'    
         print 'dam_volume =', dam_volume, '\n'
         "TODO: save value of dammif volume into database."
         
 
 def usage():
+    """
+    Usage: ./PipelineLite.py [OPTIONS] -f /full/path/filename.dat -o /output/full/path/
+    
+    -d --datfile       The full path of your SAXS experimental data file to be used for models.
+    
+    -o --output_path   The full directory path for all output files generated during pipeline modeling. 
+    """
     print 'Usage: %s [OPTIONS] -f /full/path/filename.dat -o /output/full/path/ \n' % (sys.argv[0])
     print '''
               
