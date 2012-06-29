@@ -16,7 +16,7 @@ try:
     import yaml
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
-    sys.exit(2)
+    #sys.exit(2) #this line terminated sphinx docs building on readthedocs.
 
 from threading import Thread
 

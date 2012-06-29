@@ -6,7 +6,7 @@ try:
     from sqlalchemy import Column, Integer, String
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
-    sys.exit(2)
+    # sys.exit(2) #this line terminated sphinx docs building on readthedocs.
 
 class TableBuilder():
 
