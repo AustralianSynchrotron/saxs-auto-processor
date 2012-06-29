@@ -22,7 +22,6 @@ except ImportError, e:
 
 class WorkerDB(Worker):  
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     | Worker for controlling CRUD of database
     | Uses SQLAlchemy Library
     | Utilises the PUB-SUB design pattern from ZMQ

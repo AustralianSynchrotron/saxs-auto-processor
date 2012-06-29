@@ -16,7 +16,6 @@ from Core import DatFileWriter
 
 class WorkerBufferAverage(Worker):  
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     | Average Buffer Worker
     | Takes a constant steam of buffers for a related sample and averages it out
     | Utilises the REQ-REP design pattern from ZMQ

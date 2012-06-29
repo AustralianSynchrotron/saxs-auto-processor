@@ -15,7 +15,6 @@ from Core import DatFileWriter
 
 class Worker():
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     The base class for all Workers to inherit from, has some generic methods
     """
     

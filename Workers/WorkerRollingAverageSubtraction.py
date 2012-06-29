@@ -16,7 +16,6 @@ from Core import DatFileWriter
 
 class WorkerRollingAverageSubtraction(Worker): 
     """
-    .. codeauthor:: Jack Dwyer <jackjack.dwyer@gmail.com>
     Takes the constant stream of Static Images, averages them writes to the disk then subtracts and writes to the disk.
     It does this for every sample type
     """   
