@@ -258,7 +258,7 @@ class Engine():
             else:
                 print "NO USER CHANAGE"
                 
-                print "BETTER CHECK IF USER CHANGED!"
+                print "BETTER CHECK IF EXPERIMENT CHANGED!"
                 if (testStringChange(experiment, self.previousExperiment)):
                     print "EXPERUIMENT CHANGE!"
                     self.previousExperiment = experiment
@@ -321,8 +321,8 @@ class Engine():
         self.needBuffer = True
         
         self.user = user
-        self.liveLog = self.rootDirectory + "/" + self.user + "/images/livelogfile.log"
-        self.datFileLocation = self.rootDirectory + "/" + self.user + "/raw_dat/"
+        self.liveLog = os.path.join(self.rootDirectory, self.user, "/images/livelogfile.log")
+        self.datFileLocation = os.path.join(self.rootDirectory, self.user, "/raw_dat/")
         
         #Generate Directory Structure
         createFolderStructure(self.rootDirectory, self.user)
@@ -330,7 +330,7 @@ class Engine():
         
         #Update all workers
         self.sendCommand({"command":"update_user", "user":self.user})
-        self.sendCommand({"command":"absolute_directory","absolute_directory":self.rootDirectory + "/" + self.user})
+        self.sendCommand({"command":"absolute_directory","absolute_directory":os.path.join(self.rootDirectory, self.user)})
         
         
         
