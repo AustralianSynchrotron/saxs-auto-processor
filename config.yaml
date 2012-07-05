@@ -1,7 +1,3 @@
-database : 
-    host : "localhost"
-    user : "root"
-    password : "a"
 
 RootDirectory : "/tmp/"
 #RootDirectory : "/data/pilatus1M/data/Cycle_2012_2/"

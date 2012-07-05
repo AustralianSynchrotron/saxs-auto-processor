@@ -5,6 +5,7 @@ sys.path.append("../")
 try:
     import zmq
     import MySQLdb as mysql
+    import yaml
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
     # sys.exit(2) #this line terminated sphinx docs building on readthedocs.
@@ -31,6 +32,7 @@ class WorkerDB(Worker):
         Worker.__init__(self, "WorkerDB")
         
         self.db = None
+        self.configuration = '../settings.conf'
         
         #Specific ZMQ stuff for WorkerDB, it uses SUB/PUB
         self.sub = self.context.socket(zmq.SUB)
@@ -44,7 +46,7 @@ class WorkerDB(Worker):
             print obj['line'].data["SampleType"]
         
         if (command == "createDB"):
-            self.createDB(self.user)
+            self.createDB(self.user, self.configuration)
         
    
     def connect(self, pullPort = False, subPort = False):
@@ -148,12 +150,20 @@ class WorkerDB(Worker):
         self.user = str(user)
         self.logger.info("User set to %(user)s" % {'user':self.user})
 
-    def createDB(self, user):
+    def createDB(self, user, configuration):
         """
         Force creates a database in the local mysql
         """
         try:
-            db = mysql.connect(user="root", host="localhost", passwd="a")
+            stream = file(configuration, 'r') 
+        except IOError:
+            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
+            sys.exit
+        config = yaml.load(stream)    
+        database = config.get('database')
+            
+        try:
+            db = mysql.connect(user=database['user'], host=database['host'], passwd=database['passwd'])
             c = db.cursor()
             cmd = "CREATE DATABASE IF NOT EXISTS " + str(user) + ";"
             c.execute(cmd)      

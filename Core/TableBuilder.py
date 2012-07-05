@@ -1,5 +1,7 @@
 import sys
+import logging
 try:
+    import yaml
     from sqlalchemy import create_engine
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
@@ -10,17 +12,33 @@ except ImportError, e:
 
 class TableBuilder():
 
-    def __init__(self, database, tableName, attribList):
+    def __init__(self, database_name, tableName, attribList):
+        self.name = "TableBuilder"
+        self.configuration = '../settings.conf'
+        
         self.Base = declarative_base()
         self.tableName = tableName
         #self.engine = create_engine('sqlite:///'+str(location)+str(user)+'.db')
-        self.engine = create_engine("mysql+mysqldb://root:a@localhost/"+database)
+        self.engine = self.createDBEngine(database_name)
         self.dictColumns = {}
         self.attribList = self.columnBuilder(attribList)
         self.table = self.gen(self.tableName, self.dictColumns)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
         
+    def createDBEngine(self, database_name):
+        try:
+            stream = file(self.configuration, 'r') 
+        except IOError:
+            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
+            sys.exit
+        config = yaml.load(stream)    
+        database = config.get('database')
+        
+        engine_str = "mysql+mysqldb://%s:%s@%s/%s" % (database['user'], database['passwd'], database['host'], database_name)
+        db_engine = create_engine(engine_str)
+        
+        return db_engine
     
     def gen(self, table_name, colDict):
         class logDataTableBuilder(self.Base):

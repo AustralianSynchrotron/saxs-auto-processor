@@ -12,7 +12,9 @@ Class for wrapping the SQL alchemy commands for entering data into the database
 TODO: Work out the table structure.. as I can't make a db until i have read the first line of the log file
 """
 import sys
+import logging
 try:
+    import yaml
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy import Column, Integer, String
@@ -20,8 +22,6 @@ try:
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
     # sys.exit(2) #this line terminated sphinx docs building on readthedocs.
-
-
 
 
 """
@@ -35,9 +35,10 @@ class DBExporter:
     
     def __init__(self, user, experiment):
         self.name = "DBExporter"
+        self.configuration = '../settings.conf'
+        
         #here could generate connection string on the fly, needed for take home if they are going to be connecting to SQLite
-        db = "mysql+mysqldb://root:a@localhost/"+user
-        engine = create_engine(db)
+        engine = self.createDBEngine(user)
 
         Base = declarative_base()
 
@@ -48,7 +49,20 @@ class DBExporter:
         
         Base.metadata.create_all(engine)
               
+    def createDBEngine(self, database_name):
+        try:
+            stream = file(self.configuration, 'r') 
+        except IOError:
+            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
+            sys.exit
+        config = yaml.load(stream)    
+        database = config.get('database')
         
+        engine_str = "mysql+mysqldb://%s:%s@%s/%s" % (database['user'], database['passwd'], database['host'], database_name)
+        db_engine = create_engine(engine_str)
+        
+        return db_engine
+    
         
 if __name__ == "__main__":
     testDB = DBExporter()
