@@ -37,30 +37,36 @@ class Engine():
     """
     def __init__(self, configuration):
         self.name = "Engine"
+
+        #Read all configuration settings
+        self.config = None
+        self.workers = None   
+        self.rootDirectory = None             
+
+        try:
+            self.setConfiguration(configuration)
+        except IOError:
+            print "Unable to read configuration file from %s, exiting." % (configuration, )
+            sys.exit(1)
+        
+        # setup logging                    
         self.logger = None
         self.setLoggingDetails()
         
         #Instantiate class variables
         self.first = True #For catching index error
-        self.rootDirectory = None
         self.user = None
         self.logLines = []
         self.needBuffer = True
         
         # Object that will be watching the LiveLogFile
         self.logWatcher = LogWatcher.LogWatcher()
-
         
         #SET Correctly in newUser
         self.liveLog = None
         self.datFileLocation = None
-        
         self.previousUser = None #Used to compare current user against new user (to stop if users click the pv etc)
         self.previousExperiment = None
-        self.workers = None
-
-        #Read all configuration settings
-        self.setConfiguration(configuration)
 
         #ZMQ Class Variables
         self.zmqContext = zmq.Context()
@@ -93,21 +99,14 @@ class Engine():
         Raises:
            IOError: When it is unable to find the configuration
         """    
-        try:
-            stream = file(configuration, 'r') 
-        except IOError:
-            logging.critical(self.name, "Unable to find configuration file (config.yaml, in current directory), exiting.")
-            sys.exit
-        
-        config = yaml.load(stream)
-        self.rootDirectory = config.get('RootDirectory')
-        self.userChangePV = config.get('UserChangePV')
-        self.experimentFolderOn = config.get('ExperimentFolderOn')
-        
-        print self.experimentFolderOn
-        
-        self.workers = config.get('workers')
+        with open(configuration, 'r') as config_file:
+            self.config = yaml.load(config_file)
 
+            self.rootDirectory = self.config.get('RootDirectory')
+            self.userChangePV = self.config.get('UserChangePV')
+            self.experimentFolderOn = self.config.get('ExperimentFolderOn')                
+            self.workers = self.config.get('workers')
+        
     def instantiateWorkers(self, workers):
         """Instantiates each worker as specified by the Configuration 
         
