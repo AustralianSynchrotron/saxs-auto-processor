@@ -12,9 +12,9 @@ except ImportError, e:
 
 class TableBuilder():
 
-    def __init__(self, database_name, tableName, attribList):
+    def __init__(self, config, database_name, tableName, attribList):
         self.name = "TableBuilder"
-        self.configuration = '../settings.conf'
+        self.config = config
         
         self.Base = declarative_base()
         self.tableName = tableName
@@ -27,13 +27,7 @@ class TableBuilder():
         self.session = Session()
         
     def createDBEngine(self, database_name):
-        try:
-            stream = file(self.configuration, 'r') 
-        except IOError:
-            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
-            sys.exit
-        config = yaml.load(stream)    
-        database = config.get('database')
+        database = self.config.get('database')
         
         engine_str = "mysql+mysqldb://%s:%s@%s/%s" % (database['user'], database['passwd'], database['host'], database_name)
         db_engine = create_engine(engine_str)

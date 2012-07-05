@@ -33,9 +33,9 @@ MAKE A DB BASED ON THE NAME.. then the next directory will be the table
 
 class DBExporter:
     
-    def __init__(self, user, experiment):
+    def __init__(self, config, user, experiment):
         self.name = "DBExporter"
-        self.configuration = '../settings.conf'
+        self.config
         
         #here could generate connection string on the fly, needed for take home if they are going to be connecting to SQLite
         engine = self.createDBEngine(user)
@@ -50,13 +50,7 @@ class DBExporter:
         Base.metadata.create_all(engine)
               
     def createDBEngine(self, database_name):
-        try:
-            stream = file(self.configuration, 'r') 
-        except IOError:
-            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
-            sys.exit
-        config = yaml.load(stream)    
-        database = config.get('database')
+        database = self.config.get('database')
         
         engine_str = "mysql+mysqldb://%s:%s@%s/%s" % (database['user'], database['passwd'], database['host'], database_name)
         db_engine = create_engine(engine_str)

@@ -46,7 +46,7 @@ class WorkerDB(Worker):
             print obj['line'].data["SampleType"]
         
         if (command == "createDB"):
-            self.createDB(self.user, self.configuration)
+            self.createDB(self.user)
         
    
     def connect(self, pullPort = False, subPort = False):
@@ -150,7 +150,7 @@ class WorkerDB(Worker):
         self.user = str(user)
         self.logger.info("User set to %(user)s" % {'user':self.user})
 
-    def createDB(self, user, configuration):
+    def createDB(self, user):
         """
         Force creates a database in the local mysql
         """
@@ -173,20 +173,20 @@ class WorkerDB(Worker):
         collumAttributes = ['WashType', 'SampleOmega', 'FilePluginDestination', 'Temperature2', 'Temperature1', 'WellNumber', 'SamplePhi', 'NumericTimeStamp', 'I0', 'SampleY', 'SampleX', 'SampleChi', 'TimeStamp', 'SampleType', 'ImageCounter', 'Ibs', 'exptime', 'FilePluginFileName', 'Energy', 'It', 'SampleTableX', 'SampleTableY', 'NORD', 'ImageLocation']
 
         #collumAttributes_old = ['I0', 'NumericTimeStamp', 'WashType', 'FilePluginDestination', 'TimeStamp', 'Energy', 'NORD', 'SampleType', 'It', 'SampleTableX', 'SampleTableY', 'Temperature2', 'Temperature1', 'WellNumber', 'Ibs', 'exptime', 'FilePluginFileName', 'ImageLocation']
-        self.logTable = TableBuilder.TableBuilder(self.user, "Log", collumAttributes)
+        self.logTable = TableBuilder.TableBuilder(self.config, self.user, "Log", collumAttributes)
         
         #This needs to bs fixed to support different sample types
         bufferRows = ['buffer_location']
-        self.bufferTable = TableBuilder.TableBuilder(self.user, 'buffers', bufferRows)
+        self.bufferTable = TableBuilder.TableBuilder(self.config, self.user, 'buffers', bufferRows)
         
         subtractedRows = ['subtracted_location', 'avg-low-q', 'avg-high-q', 'valid']
-        self.subtractedTable = TableBuilder.TableBuilder(self.user, 'subtracted_images', subtractedRows)
+        self.subtractedTable = TableBuilder.TableBuilder(self.config, self.user, 'subtracted_images', subtractedRows)
         
         averagedRows = ['average_location']
-        self.averagedTable = TableBuilder.TableBuilder(self.user, 'average_images', averagedRows)
+        self.averagedTable = TableBuilder.TableBuilder(self.config, self.user, 'average_images', averagedRows)
         
         averagedSubRows = ['subtracted_average_location']
-        self.averagedSubTable = TableBuilder.TableBuilder(self.user, 'average_subtracted_images', averagedSubRows)
+        self.averagedSubTable = TableBuilder.TableBuilder(self.config, self.user, 'average_subtracted_images', averagedSubRows)
 
     
     
