@@ -253,7 +253,7 @@ class Engine():
                 print "USER CHANGE, SO YES experiment CHANGE \nRUN user.change with experiment!"
                 self.previousUser = user
                 self.previousExperiment = experiment
-                self.newUser1()
+                self.newUser(user)
 
             else:
                 print "NO USER CHANAGE"
@@ -277,7 +277,7 @@ class Engine():
             if testStringChange(user, self.previousUser):
                 print "USER HAS CHANGED, run new user"
                 self.previousUser = user
-                self.newUser1()
+                self.newUser(user)
 
             else:
                 print "NO USER CHANGE DO NOTHING"
