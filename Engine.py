@@ -320,8 +320,8 @@ class Engine():
         self.needBuffer = True
         
         self.user = user
-        self.liveLog = os.path.join(self.rootDirectory, self.user, "/images/livelogfile.log")
-        self.datFileLocation = os.path.join(self.rootDirectory, self.user, "/raw_dat/")
+        self.liveLog = os.path.join(self.rootDirectory, self.user, "images/livelogfile.log")
+        self.datFileLocation = os.path.join(self.rootDirectory, self.user, "raw_dat/")
         
         #Generate Directory Structure
         createFolderStructure(self.rootDirectory, self.user)
