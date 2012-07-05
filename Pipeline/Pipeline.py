@@ -15,18 +15,18 @@ except ImportError, e:
 
 
 class Pipeline:
-    def __init__(self, configuration, username, experiment, datfile):
+    def __init__(self, configuration):
         self.name = "Pipeline"
         
         #---------- Auto processor settings -----------------------------------#
         self.PROD_USER                  = None
         self.PROD_HOST                  = None
-        self.PROD_CODE_ROOT             = None
         self.PROD_DATA_ROOT             = None
+        self.PROD_CODE_ROOT             = None
         self.PROD_PIPELINE_HARVEST      = None
-        self.PROD_USER_EPN              = username
-        self.PROD_USER_EXP              = experiment
-        self.PROD_USER_DAT_FILE         = datfile
+        self.PROD_USER_EPN              = None
+        self.PROD_USER_EXP              = None
+        self.PROD_USER_DAT_FILE         = None
         self.PROD_PIPELINE_INPUT_DIR    = None
         self.PROD_PIPELINE_OUTPUT_DIR   = None
         self.PROD_SSH_ACCESS            = None
@@ -36,8 +36,8 @@ class Pipeline:
         #---------- Pipeline settings -----------------------------------------#
         self.MASSIVE_USER               = None
         self.MASSIVE_HOST               = None
-        self.PIPELINE_CODE_ROOT         = None
         self.PIPELINE_DATA_ROOT         = None
+        self.PIPELINE_CODE_ROOT         = None
         self.PIPELINE_WRAPPER           = None
         self.PIPELINE_INPUT_DIR         = None
         self.PIPELINE_OUTPUT_DIR        = None
@@ -59,37 +59,39 @@ class Pipeline:
         config = yaml.load(stream)
         
         #---------- Auto processor settings -----------------------------------#
-        self.PROD_USER = config.get('PROD_USER')
-        self.PROD_HOST = config.get('PROD_HOST')
-        
-        self.PROD_CODE_ROOT = config.get('PROD_CODE_ROOT')
-        self.PROD_DATA_ROOT = config.get('PROD_DATA_ROOT')
-        self.PROD_PIPELINE_HARVEST = config.get('PROD_PIPELINE_HARVEST')
-        
-        self.PROD_PIPELINE_INPUT_DIR = config.get('PROD_PIPELINE_INPUT_DIR')
+        self.PROD_USER                = config.get('PROD_USER')
+        self.PROD_HOST                = config.get('PROD_HOST')
+        self.PROD_DATA_ROOT           = config.get('PROD_DATA_ROOT')
+        self.PROD_CODE_ROOT           = config.get('PROD_CODE_ROOT')
+        self.PROD_PIPELINE_HARVEST    = config.get('PROD_PIPELINE_HARVEST')
+        self.PROD_PIPELINE_INPUT_DIR  = config.get('PROD_PIPELINE_INPUT_DIR')
         self.PROD_PIPELINE_OUTPUT_DIR = config.get('PROD_PIPELINE_OUTPUT_DIR')
         
-        self.PROD_SSH_ACCESS = self.PROD_USER + "@" + self.PROD_HOST
-        self.PROD_PIPELINE_SCP_FROM = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_INPUT_DIR
-        self.PROD_PIPELINE_SCP_DEST = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_OUTPUT_DIR        
-        self.PROD_PIPELINE_HARVEST_PATH = self.PROD_CODE_ROOT + "/" + self.PROD_PIPELINE_HARVEST
-        
         #---------- Pipeline settings -----------------------------------------#
-        self.MASSIVE_USER = config.get('MASSIVE_USER')
-        self.MASSIVE_HOST = config.get('MASSIVE_HOST')
-        self.PIPELINE_CODE_ROOT = config.get('PIPELINE_CODE_ROOT')
-        self.PIPELINE_DATA_ROOT = config.get('PIPELINE_DATA_ROOT')
-        self.PIPELINE_WRAPPER = config.get('PIPELINE_WRAPPER')
-        
-        self.PIPELINE_INPUT_DIR = self.PROD_PIPELINE_INPUT_DIR
+        self.MASSIVE_USER        = config.get('MASSIVE_USER')
+        self.MASSIVE_HOST        = config.get('MASSIVE_HOST')
+        self.PIPELINE_DATA_ROOT  = config.get('PIPELINE_DATA_ROOT')
+        self.PIPELINE_CODE_ROOT  = config.get('PIPELINE_CODE_ROOT')
+        self.PIPELINE_WRAPPER    = config.get('PIPELINE_WRAPPER')
+        self.PIPELINE_INPUT_DIR  = self.PROD_PIPELINE_INPUT_DIR
         self.PIPELINE_OUTPUT_DIR = self.PROD_PIPELINE_OUTPUT_DIR
 
-        self.PIPELINE_USER_EXP_DIR = self.PIPELINE_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP
-        self.PIPELINE_USER_INPUT_DIR = self.PIPELINE_USER_EXP_DIR + "/" + self.PIPELINE_INPUT_DIR
+
+    def runPipeline(self, username, experiment, datfile):
+        # Set target user, experiment and datfile
+        self.PROD_USER_EPN          = username
+        self.PROD_USER_EXP          = experiment
+        self.PROD_USER_DAT_FILE     = datfile
+        #---------- Auto processor settings -----------------------------------#
+        self.PROD_SSH_ACCESS            = self.PROD_USER + "@" + self.PROD_HOST
+        self.PROD_PIPELINE_SCP_FROM     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_INPUT_DIR
+        self.PROD_PIPELINE_SCP_DEST     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_OUTPUT_DIR 
+        self.PROD_PIPELINE_HARVEST_PATH = self.PROD_CODE_ROOT + "/" + self.PROD_PIPELINE_HARVEST  
+        
+        #---------- Pipeline settings -----------------------------------------#
+        self.PIPELINE_USER_EXP_DIR    = self.PIPELINE_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP
+        self.PIPELINE_USER_INPUT_DIR  = self.PIPELINE_USER_EXP_DIR + "/" + self.PIPELINE_INPUT_DIR
         self.PIPELINE_USER_OUTPUT_DIR = self.PIPELINE_USER_EXP_DIR + "/" + self.PIPELINE_OUTPUT_DIR + "/"
-
-
-    def runPipeline(self):
         # Create user's directories
         self.createDirs()
         # Copy user's experimental data file
@@ -208,7 +210,7 @@ if __name__ == "__main__":
         sys.exit(2) 
     
     
-    pipeline = Pipeline(configuration, username, experiment, datfile)
-    pipeline.runPipeline()
+    pipeline = Pipeline(configuration)
+    pipeline.runPipeline(username, experiment, datfile)
     
     

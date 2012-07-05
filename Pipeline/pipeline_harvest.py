@@ -55,8 +55,9 @@ def harvestFile(type, file_to_harvest, prefix):
 def usage():
     print 'Usage: %s [OPTIONS] -p /data_home/user_epn/user_exp/analysis/sample  \n' % (sys.argv[0])
     print '''
--p --prefix    Prefix to prepend to output filenames (*-1.pdb). Should include 
-               absolute paths, all directory components must exist.
+-p --prefix    Prefix of all output filenames (*-1.pdb) which are going to be 
+               harvested. Should include absolute paths, all directory  
+               components must exist.
 
 
 '''
