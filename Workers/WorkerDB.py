@@ -28,11 +28,11 @@ class WorkerDB(Worker):
     | Utilises the PUB-SUB design pattern from ZMQ
     """
       
-    def __init__(self):
+    def __init__(self, config, **kwargs):
         Worker.__init__(self, "WorkerDB")
         
         self.db = None
-        self.configuration = '../settings.conf'
+        self.config = config
         
         #Specific ZMQ stuff for WorkerDB, it uses SUB/PUB
         self.sub = self.context.socket(zmq.SUB)
@@ -154,13 +154,7 @@ class WorkerDB(Worker):
         """
         Force creates a database in the local mysql
         """
-        try:
-            stream = file(configuration, 'r') 
-        except IOError:
-            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
-            sys.exit
-        config = yaml.load(stream)    
-        database = config.get('database')
+        database = self.config.get('database')
             
         try:
             db = mysql.connect(user=database['user'], host=database['host'], passwd=database['passwd'])

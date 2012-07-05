@@ -18,7 +18,7 @@ class WorkerStaticImage(Worker):
     """
     | Subtracts every image from buffer
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         Worker.__init__(self, "Worker Static Image")
         
         #Specific Class Variables

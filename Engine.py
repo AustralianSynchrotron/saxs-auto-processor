@@ -121,7 +121,7 @@ class Engine():
         for worker in workers:
             im = __import__('Workers.'+worker, globals(), locals(), [worker])
             v = getattr(im, worker)
-            x = v()
+            x = v(config=self.config)
             instanceDict[worker] = x
         return instanceDict
 

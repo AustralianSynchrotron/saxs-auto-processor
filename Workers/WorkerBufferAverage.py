@@ -21,7 +21,7 @@ class WorkerBufferAverage(Worker):
     | Utilises the REQ-REP design pattern from ZMQ
     """
       
-    def __init__(self):
+    def __init__(self, **kwargs):
         Worker.__init__(self, "Worker Buffer Average")
         
         #Specific Class Variables

@@ -19,7 +19,7 @@ class WorkerRollingAverageSubtraction(Worker):
     Takes the constant stream of Static Images, averages them writes to the disk then subtracts and writes to the disk.
     It does this for every sample type
     """   
-    def __init__(self):
+    def __init__(self, **kwargs):
         Worker.__init__(self, "Worker Rolling Average Subtraction")
         
         #Class specific variables

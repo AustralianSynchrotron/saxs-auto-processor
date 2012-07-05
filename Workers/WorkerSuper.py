@@ -12,7 +12,7 @@ class WorkerSuper(Worker):
     """
     Example Worker who has inherited the base worker
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         Worker.__init__(self, "Worker Super")
         
 
