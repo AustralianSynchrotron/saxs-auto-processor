@@ -11,6 +11,7 @@ from Worker import Worker
 from Core import AverageList
 from Core import DatFile
 from Core import DatFileWriter
+from Pipeline import Pipeline
 
 
 
@@ -19,8 +20,14 @@ class WorkerRollingAverageSubtraction(Worker):
     Takes the constant stream of Static Images, averages them writes to the disk then subtracts and writes to the disk.
     It does this for every sample type
     """   
-    def __init__(self, **kwargs):
+    def __init__(self, config, **kwargs):
         Worker.__init__(self, "Worker Rolling Average Subtraction")
+        
+        # variables for pipeline data analysis
+        self.config = config
+        self.nextPipelineUser = None
+        self.nextPipelineExp = None
+        self.nextPipelineInput = None
         
         #Class specific variables
         self.averagedBuffer = None
@@ -74,6 +81,12 @@ class WorkerRollingAverageSubtraction(Worker):
         
         datName = "avg_sub_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
         
+        # record the next input file ready for pipeline modelling 
+        strings = self.absoluteLocation.split('/')
+        self.nextPipelineUser = strings[-2]
+        self.nextPipelineExp = strings[-1]
+        self.nextPipelineInput = self.absoluteLocation + "/sub/" + datName
+        
         subtractedIntensities = self.subtractBuffer(averagedIntensities, self.averagedBuffer)
         
         if (subtractedIntensities):
@@ -113,6 +126,16 @@ class WorkerRollingAverageSubtraction(Worker):
         """
         self.datFiles = []
         self.datIndex = self.datIndex + 1
+        
+        # run pipeline with an averaged, subtracted datfile which is ready (finish averaging)
+        if self.nextPipelineInput:
+            # run remote pipeline
+            pipeline = Pipeline(self.config)
+            pipeline.runPipeline(self.nextPipelineUser, self.nextPipelineExp, self.nextPipelineInput)
+            # empty variables since the datfile has been sent to pipeline for data processing
+            self.nextPipelineUser = None
+            self.nextPipelineExp = None
+            self.nextPipelineInput = None
     
     def newBuffer(self):
         """

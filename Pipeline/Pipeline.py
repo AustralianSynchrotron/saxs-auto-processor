@@ -15,7 +15,7 @@ except ImportError, e:
 
 
 class Pipeline:
-    def __init__(self, configuration):
+    def __init__(self, config):
         self.name = "Pipeline"
         
         #---------- Auto processor settings -----------------------------------#
@@ -46,17 +46,10 @@ class Pipeline:
         self.PIPELINE_USER_OUTPUT_DIR   = None
         
         #Read all configuration settings
-        self.setConfiguration(configuration)
+        self.setConfiguration(config)
 
 
-    def setConfiguration(self, configuration):
-        try:
-            stream = file(configuration, 'r') 
-        except IOError:
-            logging.critical(self.name, "Unable to find configuration file settings.conf, exiting.")
-            sys.exit
-        
-        config = yaml.load(stream)
+    def setConfiguration(self, config):
         
         #---------- Auto processor settings -----------------------------------#
         self.PROD_USER                = config.get('PROD_USER')
@@ -208,9 +201,16 @@ if __name__ == "__main__":
     if not datfile.endswith('.dat'):
         print "ERROR: *.dat file (SAXS experimental data file) is expected as an input file."
         sys.exit(2) 
+
+    try:
+        stream = file(configuration, 'r') 
+    except IOError:
+        logging.critical("Pipeline", "Unable to find configuration file settings.conf, exiting.")
+        sys.exit
     
+    config = yaml.load(stream)
     
-    pipeline = Pipeline(configuration)
+    pipeline = Pipeline(config)
     pipeline.runPipeline(username, experiment, datfile)
     
     
