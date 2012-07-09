@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """
 Jack Dwyer
 06-07-2012
@@ -11,6 +13,7 @@ import sys
 import glob
 import shutil
 import os
+import logging
 
 
 sys.path.append("../")
