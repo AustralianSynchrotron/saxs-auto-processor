@@ -28,6 +28,7 @@ class WorkerRollingAverageSubtraction(Worker):
         self.nextPipelineUser = None
         self.nextPipelineExp = None
         self.nextPipelineInput = None
+        self.pipelineon = config.get("PipelineOn")
         
         #Class specific variables
         self.averagedBuffer = None
@@ -86,10 +87,11 @@ class WorkerRollingAverageSubtraction(Worker):
             self.pub.send_pyobj({"command":"averaged_subtracted_sample", "location":datName})
             
             # record the next input file ready for pipeline modelling 
-            strings = str(self.absoluteLocation).split('/')
-            self.nextPipelineUser = strings[-2]
-            self.nextPipelineExp = strings[-1]
-            self.nextPipelineInput = self.absoluteLocation + "/sub/" + datName
+            if self.pipelineon:
+                strings = str(self.absoluteLocation).split('/')
+                self.nextPipelineUser = strings[-2]
+                self.nextPipelineExp = strings[-1]
+                self.nextPipelineInput = self.absoluteLocation + "/sub/" + datName
 
 
         
@@ -126,7 +128,7 @@ class WorkerRollingAverageSubtraction(Worker):
         self.datIndex = self.datIndex + 1
         
         # run pipeline with an averaged, subtracted datfile
-        if self.nextPipelineInput:
+        if self.nextPipelineInput and self.pipelineon:
             # run remote pipeline
             pipeline = Pipeline.Pipeline(self.config)
             pipeline.runPipeline(self.nextPipelineUser, self.nextPipelineExp, self.nextPipelineInput)
