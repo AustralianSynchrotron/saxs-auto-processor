@@ -76,22 +76,20 @@ class WorkerRollingAverageSubtraction(Worker):
         if (averagedIntensities):
             self.datWriter.writeFile(self.absoluteLocation + "/avg/", datName, { 'q' : datFile.getq(), "i" : averagedIntensities, 'errors':datFile.getErrors()})
             self.pub.send_pyobj({"command":"averaged_sample", "location":datName})
-
-
         
         datName = "avg_sub_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
-        
-        # record the next input file ready for pipeline modelling 
-        strings = self.absoluteLocation.split('/')
-        self.nextPipelineUser = strings[-2]
-        self.nextPipelineExp = strings[-1]
-        self.nextPipelineInput = self.absoluteLocation + "/sub/" + datName
         
         subtractedIntensities = self.subtractBuffer(averagedIntensities, self.averagedBuffer)
         
         if (subtractedIntensities):
             self.datWriter.writeFile(self.absoluteLocation + "/sub/", datName, { 'q' : datFile.getq(), "i" : subtractedIntensities, 'errors':datFile.getErrors()})
             self.pub.send_pyobj({"command":"averaged_subtracted_sample", "location":datName})
+            
+            # record the next input file ready for pipeline modelling 
+            strings = str(self.absoluteLocation).split('/')
+            self.nextPipelineUser = strings[-2]
+            self.nextPipelineExp = strings[-1]
+            self.nextPipelineInput = self.absoluteLocation + "/sub/" + datName
 
 
         
@@ -127,7 +125,7 @@ class WorkerRollingAverageSubtraction(Worker):
         self.datFiles = []
         self.datIndex = self.datIndex + 1
         
-        # run pipeline with an averaged, subtracted datfile which is ready (finish averaging)
+        # run pipeline with an averaged, subtracted datfile
         if self.nextPipelineInput:
             # run remote pipeline
             pipeline = Pipeline(self.config)
