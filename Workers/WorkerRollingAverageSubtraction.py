@@ -128,7 +128,7 @@ class WorkerRollingAverageSubtraction(Worker):
         # run pipeline with an averaged, subtracted datfile
         if self.nextPipelineInput:
             # run remote pipeline
-            pipeline = Pipeline(self.config)
+            pipeline = Pipeline.Pipeline(self.config)
             pipeline.runPipeline(self.nextPipelineUser, self.nextPipelineExp, self.nextPipelineInput)
             # empty variables since the datfile has been sent to pipeline for data processing
             self.nextPipelineUser = None
