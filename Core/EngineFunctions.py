@@ -43,6 +43,7 @@ def createFolderStructure(rootDirectory, user):
         os.makedirs(fullPath + "/avg/")
         os.makedirs(fullPath + "/sub/")
         os.makedirs(fullPath + "/sub/raw_sub/")
+        os.makedirs(fullPath + "/analysis/")
         os.makedirs(fullPath + "/manual/")
         os.makedirs(fullPath + "/manual/man_raw_dat/")
         os.makedirs(fullPath + "/manual/man_avg/")
