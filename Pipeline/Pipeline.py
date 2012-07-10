@@ -77,12 +77,19 @@ class Pipeline:
         self.PROD_USER_DAT_FILE     = datfile
         #---------- Auto processor settings -----------------------------------#
         self.PROD_SSH_ACCESS            = self.PROD_USER + "@" + self.PROD_HOST
-        self.PROD_PIPELINE_SCP_FROM     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_INPUT_DIR
-        self.PROD_PIPELINE_SCP_DEST     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_OUTPUT_DIR 
+        if self.PROD_USER_EXP: # user folder and experiment folder
+            self.PROD_PIPELINE_SCP_FROM     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_INPUT_DIR
+            self.PROD_PIPELINE_SCP_DEST     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP + "/" + self.PROD_PIPELINE_OUTPUT_DIR 
+        else: # only user folder
+            self.PROD_PIPELINE_SCP_FROM     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_PIPELINE_INPUT_DIR
+            self.PROD_PIPELINE_SCP_DEST     = self.PROD_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_PIPELINE_OUTPUT_DIR
         self.PROD_PIPELINE_HARVEST_PATH = self.PROD_CODE_ROOT + "/" + self.PROD_PIPELINE_HARVEST  
         
         #---------- Pipeline settings -----------------------------------------#
-        self.PIPELINE_USER_EXP_DIR    = self.PIPELINE_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP
+        if self.PROD_USER_EXP: # user folder and experiment folder
+            self.PIPELINE_USER_EXP_DIR    = self.PIPELINE_DATA_ROOT + "/" + self.PROD_USER_EPN + "/" + self.PROD_USER_EXP
+        else: # only user folder
+            self.PIPELINE_USER_EXP_DIR    = self.PIPELINE_DATA_ROOT + "/" + self.PROD_USER_EPN
         self.PIPELINE_USER_INPUT_DIR  = self.PIPELINE_USER_EXP_DIR + "/" + self.PIPELINE_INPUT_DIR
         self.PIPELINE_USER_OUTPUT_DIR = self.PIPELINE_USER_EXP_DIR + "/" + self.PIPELINE_OUTPUT_DIR + "/"
         # Create user's directories
