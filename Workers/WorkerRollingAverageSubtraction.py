@@ -98,7 +98,7 @@ class WorkerRollingAverageSubtraction(Worker):
                 else: # only user folder
                     self.nextPipelineUser = folders[-1]
                     self.nextPipelineExp = None
-                self.nextPipelineInput = path + "/sub/" + datName
+                self.nextPipelineInput = datName
 
 
         
