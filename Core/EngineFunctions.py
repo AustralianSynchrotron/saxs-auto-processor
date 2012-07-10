@@ -53,8 +53,3 @@ def createFolderStructure(rootDirectory, user):
     except OSError:
         pass
 
-        
-
-def generateDirectoryStructure(rootDirectory):
-    dirCreator = DirectoryCreator.DirectoryCreator(rootDirectory)
-    dirCreator.createFolderStructure(self.user)
