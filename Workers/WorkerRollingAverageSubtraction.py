@@ -70,19 +70,15 @@ class WorkerRollingAverageSubtraction(Worker):
         for datFile in self.datFiles:
             intensities.append(datFile.getIntensities())
         
-        averagedIntensities = self.averageList.average(intensities)
-
-
-
         datName = "avg_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
+        averagedIntensities = self.averageList.average(intensities)
         if (averagedIntensities):
             self.datWriter.writeFile(self.absoluteLocation + "/avg/", datName, { 'q' : datFile.getq(), "i" : averagedIntensities, 'errors':datFile.getErrors()})
             self.pub.send_pyobj({"command":"averaged_sample", "location":datName})
         
+        
         datName = "avg_sub_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
-        
         subtractedIntensities = self.subtractBuffer(averagedIntensities, self.averagedBuffer)
-        
         if (subtractedIntensities):
             self.datWriter.writeFile(self.absoluteLocation + "/sub/", datName, { 'q' : datFile.getq(), "i" : subtractedIntensities, 'errors':datFile.getErrors()})
             self.pub.send_pyobj({"command":"averaged_subtracted_sample", "location":datName})

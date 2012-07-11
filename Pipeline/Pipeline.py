@@ -213,7 +213,7 @@ if __name__ == "__main__":
         stream = file(configuration, 'r') 
     except IOError:
         logging.critical("Pipeline", "Unable to find configuration file settings.conf, exiting.")
-        sys.exit
+        sys.exit(2)
     
     config = yaml.load(stream)
     
