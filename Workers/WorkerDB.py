@@ -176,17 +176,20 @@ class WorkerDB(Worker):
         self.logTable = TableBuilder.TableBuilder(self.config, self.user, "Log", collumAttributes)
         
         #This needs to bs fixed to support different sample types
-        bufferRows = ['buffer_location']
-        self.bufferTable = TableBuilder.TableBuilder(self.config, self.user, 'buffers', bufferRows)
+        bufferColumns = ['buffer_location']
+        self.bufferTable = TableBuilder.TableBuilder(self.config, self.user, 'buffers', bufferColumns)
         
-        subtractedRows = ['subtracted_location', 'avg-low-q', 'avg-high-q', 'valid']
-        self.subtractedTable = TableBuilder.TableBuilder(self.config, self.user, 'subtracted_images', subtractedRows)
+        subtractedColumns = ['subtracted_location', 'avg-low-q', 'avg-high-q', 'valid']
+        self.subtractedTable = TableBuilder.TableBuilder(self.config, self.user, 'subtracted_images', subtractedColumns)
         
-        averagedRows = ['average_location']
-        self.averagedTable = TableBuilder.TableBuilder(self.config, self.user, 'average_images', averagedRows)
+        averagedColumns = ['average_location']
+        self.averagedTable = TableBuilder.TableBuilder(self.config, self.user, 'average_images', averagedColumns)
         
-        averagedSubRows = ['subtracted_average_location']
-        self.averagedSubTable = TableBuilder.TableBuilder(self.config, self.user, 'average_subtracted_images', averagedSubRows)
+        averagedSubColumns = ['average_subtracted_location', 'porod_volume']
+        self.averagedSubTable = TableBuilder.TableBuilder(self.config, self.user, 'average_subtracted_images', averagedSubColumns)
+        
+        damVolColumns = ['dammif_pdb_file', 'dam_volume', 'average_subtracted_images_fk']
+        self.damVolTable = TableBuilder.TableBuilder(self.config, self.user, 'dam_volumes', damVolColumns)
 
     
     
@@ -218,7 +221,7 @@ class WorkerDB(Worker):
         """
         For sending the averaged and subtracted files name (thusly lcoation to the database)
         """
-        self.averagedSubTable.addData({ "subtracted_average_location" : image })
+        self.averagedSubTable.addData({ "average_subtracted_location" : image })
         
         
     
