@@ -94,11 +94,10 @@ class PipelineHarvest:
                 
             elif value_type == "dam_volume":
                 # save "Total excluded DAM volume" value to database
-                datfile = str(folders[-1]).replace('_dammif_volume', '')[:-2] + '.dat'
-                pdbfile = str(folders[-1]).replace('_dammif_volume', '-1.pdb')
+                datfile = str(folders[-1]).replace('_dam_volume', '')[:-2] + '.dat'
+                pdbfile = str(folders[-1]).replace('_dam_volume', '-1.pdb')
                 
-                asi_obj = session.query(AverageSubtractedImages).filter_by(average_subtracted_location=datfile).first()
-                datfile_id = asi_obj.id
+                datfile_id = session.query(AverageSubtractedImages).filter_by(average_subtracted_location=datfile).first().id
                 obj = DamVolumes(dammif_pdb_file=pdbfile, dam_volume=value, average_subtracted_images_fk=datfile_id)
                 session.add(obj)
                 session.commit()
