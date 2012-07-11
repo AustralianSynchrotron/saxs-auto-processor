@@ -159,7 +159,7 @@ class Pipeline:
         ARG7=self.PROD_CONFIG
         
         # start pipeline analysis
-        command = "ssh %s@%s bash %s/%s %s %s %s %s %s %s" % (self.MASSIVE_USER,
+        command = "ssh %s@%s bash %s/%s %s %s %s %s %s %s %s" % (self.MASSIVE_USER,
                                                               self.MASSIVE_HOST,
                                                               self.PIPELINE_CODE_ROOT,
                                                               self.PIPELINE_WRAPPER,
