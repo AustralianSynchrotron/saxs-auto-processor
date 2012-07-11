@@ -82,7 +82,6 @@ class Pipeline:
         formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
         hdlr.setFormatter(formatter)
         self.log.addHandler(hdlr)
-        self.log.setLevel(config['debug'])
 
     def runPipeline(self, username, experiment, datfile):
         # Set target user, experiment and datfile

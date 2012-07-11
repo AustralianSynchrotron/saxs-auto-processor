@@ -44,7 +44,6 @@ class PipelineHarvest:
         formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
         hdlr.setFormatter(formatter)
         self.log.addHandler(hdlr)
-        self.log.setLevel(config['debug'])
         
     def createDBEngine(self, database_name):
         database = self.config.get('database')
