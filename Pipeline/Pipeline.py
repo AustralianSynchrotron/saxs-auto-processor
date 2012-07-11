@@ -17,6 +17,7 @@ except ImportError, e:
 class Pipeline:
     def __init__(self, config):
         self.name = "Pipeline"
+        self.log = None
         
         #---------- Auto processor settings -----------------------------------#
         self.PROD_USER                  = None
@@ -47,6 +48,8 @@ class Pipeline:
         
         #Read all configuration settings
         self.setConfiguration(config)
+        # Set log
+        self.setLog()
 
 
     def setConfiguration(self, config):
@@ -69,6 +72,15 @@ class Pipeline:
         self.PIPELINE_INPUT_DIR  = self.PROD_PIPELINE_INPUT_DIR
         self.PIPELINE_OUTPUT_DIR = self.PROD_PIPELINE_OUTPUT_DIR
 
+    def setLog(self):
+        # set logging
+        log_filename = '../logs/'+self.name+'.log'
+        self.log = logging.getLogger(log_filename)
+        hdlr = logging.StreamHandler(sys.stderr)
+        formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
+        hdlr.setFormatter(formatter)
+        self.log.addHandler(hdlr)
+        self.log.setLevel(config['debug'])
 
     def runPipeline(self, username, experiment, datfile):
         # Set target user, experiment and datfile
@@ -212,7 +224,7 @@ if __name__ == "__main__":
     try:
         stream = file(configuration, 'r') 
     except IOError:
-        logging.critical("Pipeline", "Unable to find configuration file settings.conf, exiting.")
+        print "Unable to find configuration file settings.conf, exiting."
         sys.exit(2)
     
     config = yaml.load(stream)

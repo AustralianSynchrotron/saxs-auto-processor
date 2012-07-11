@@ -21,6 +21,7 @@ from models import DamVolumes
 class PipelineHarvest:
     def __init__(self, config):
         self.name = "PipelineHarvest"
+        self.log = None
         self.config = config
         
         self.TYPE               = None
@@ -29,9 +30,21 @@ class PipelineHarvest:
         
         #Read all configuration settings
         self.setConfiguration()
+        # Set log
+        self.setLog()
         
     def setConfiguration(self):
         self.ExperimentFolderOn = self.config.get("ExperimentFolderOn")
+        
+    def setLog(self):
+        # set logging
+        log_filename = '../logs/'+self.name+'.log'
+        self.log = logging.getLogger(log_filename)
+        hdlr = logging.StreamHandler(sys.stderr)
+        formatter = logging.Formatter('%(asctime)s - [%(levelname)s]: %(message)s')
+        hdlr.setFormatter(formatter)
+        self.log.addHandler(hdlr)
+        self.log.setLevel(config['debug'])
         
     def createDBEngine(self, database_name):
         database = self.config.get('database')
@@ -124,7 +137,7 @@ if __name__ == "__main__":
     try:
         stream = file(configuration, 'r') 
     except IOError:
-        logging.critical("PipelineHarvest", "Unable to find configuration file settings.conf, exiting.")
+        print "Unable to find configuration file settings.conf, exiting."
         sys.exit(2)
         
     config = yaml.load(stream)
