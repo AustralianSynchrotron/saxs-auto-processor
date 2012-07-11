@@ -97,7 +97,8 @@ class PipelineHarvest:
                 datfile = str(folders[-1]).replace('_dammif_volume', '')[:-2] + '.dat'
                 pdbfile = str(folders[-1]).replace('_dammif_volume', '-1.pdb')
                 
-                datfile_id = session.query(AverageSubtractedImages).filter_by(average_subtracted_location=datfile).first().id
+                asi_obj = session.query(AverageSubtractedImages).filter_by(average_subtracted_location=datfile).first()
+                datfile_id = asi_obj.id
                 obj = DamVolumes(dammif_pdb_file=pdbfile, dam_volume=value, average_subtracted_images_fk=datfile_id)
                 session.add(obj)
                 session.commit()
