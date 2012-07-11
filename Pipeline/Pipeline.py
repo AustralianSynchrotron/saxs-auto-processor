@@ -25,6 +25,7 @@ class Pipeline:
         self.PROD_DATA_ROOT             = None
         self.PROD_CODE_ROOT             = None
         self.PROD_PIPELINE_HARVEST      = None
+        self.PROD_CONFIG                = None
         self.PROD_USER_EPN              = None
         self.PROD_USER_EXP              = None
         self.PROD_USER_DAT_FILE         = None
@@ -60,6 +61,7 @@ class Pipeline:
         self.PROD_DATA_ROOT           = config.get('PROD_DATA_ROOT')
         self.PROD_CODE_ROOT           = config.get('PROD_CODE_ROOT')
         self.PROD_PIPELINE_HARVEST    = config.get('PROD_PIPELINE_HARVEST')
+        self.PROD_CONFIG              = config.get('PROD_CONFIG')
         self.PROD_PIPELINE_INPUT_DIR  = config.get('PROD_PIPELINE_INPUT_DIR')
         self.PROD_PIPELINE_OUTPUT_DIR = config.get('PROD_PIPELINE_OUTPUT_DIR')
         
@@ -147,6 +149,7 @@ class Pipeline:
         #         remote SAXS production server.
         #   ARG6: A full absolute path of home directory of Pipeline source code 
         #         on MASSIVE.
+        #   ARG7: A full absolute path of config file in auto-processor.
         
         ARG1=self.PIPELINE_USER_INPUT_DIR + "/" + self.PROD_USER_DAT_FILE
         ARG2=self.PIPELINE_USER_OUTPUT_DIR
@@ -154,6 +157,7 @@ class Pipeline:
         ARG4=self.PROD_PIPELINE_SCP_DEST
         ARG5=self.PROD_PIPELINE_HARVEST_PATH
         ARG6=self.PIPELINE_CODE_ROOT
+        ARG7=self.PROD_CONFIG
         
         # start pipeline analysis
         command = "ssh %s@%s bash %s/%s %s %s %s %s %s %s" % (self.MASSIVE_USER,
@@ -165,7 +169,8 @@ class Pipeline:
                                                               ARG3,
                                                               ARG4,
                                                               ARG5,
-                                                              ARG6)
+                                                              ARG6,
+                                                              ARG7)
         os.system(command)
 
 
