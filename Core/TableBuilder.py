@@ -49,8 +49,21 @@ class TableBuilder():
                  
     def addData(self, data):
         newData = self.table(**data)
-        self.session.add(newData)
-        self.session.commit()
+        #self.session.add(newData)
+        #self.session.commit()
+            
+        if self.tableName == 'subtracted_images':
+            instance = self.session.query(self.table).filter_by(subtracted_location=data).first() 
+        elif self.tableName == 'buffers':
+            instance = self.session.query(self.table).filter_by(buffer_location=data).first() 
+        elif self.tableName == 'average_images':
+            instance = self.session.query(self.table).filter_by(average_location=data).first() 
+        elif self.tableName == 'average_subtracted_images':
+            instance = self.session.query(self.table).filter_by(average_subtracted_location=data).first() 
+        
+        if not instance:
+            self.session.add(newData)
+            self.session.commit()
         
 
 if __name__ == "__main__":
