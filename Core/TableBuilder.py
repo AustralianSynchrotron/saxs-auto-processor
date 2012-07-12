@@ -53,14 +53,7 @@ class TableBuilder():
         #self.session.commit()
         
         instance = None
-        if self.tableName == 'subtracted_images':
-            instance = self.session.query(self.table).filter_by(subtracted_location=newData.subtracted_location).first() 
-        elif self.tableName == 'buffers':
-            instance = self.session.query(self.table).filter_by(buffer_location=newData.buffer_location).first() 
-        elif self.tableName == 'average_images':
-            instance = self.session.query(self.table).filter_by(average_location=newData.average_location).first() 
-        elif self.tableName == 'average_subtracted_images':
-            instance = self.session.query(self.table).filter_by(average_subtracted_location=newData.average_subtracted_location).first() 
+        instance = self.session.query(self.table).filter_by(**data).first()
         
         if not instance:
             self.session.add(newData)
