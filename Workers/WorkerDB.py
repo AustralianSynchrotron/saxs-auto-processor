@@ -109,7 +109,7 @@ class WorkerDB(Worker):
                 
                 if (command == "subtracted_sample"):
                     self.logger.info("Written location of subtracted_sample")
-                    self.writeAveragedLocation(recievedObject["location"])
+                    self.writeSubtractionLocation(recievedObject["location"])
                     continue
                 
                 if (command == "test"):
