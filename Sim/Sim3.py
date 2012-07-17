@@ -180,6 +180,6 @@ class Sim3():
 
 
 if __name__ == "__main__":
-    sim = Sim3("simsettings.conf")
+    sim = Sim3("../settings.conf")
 
 
