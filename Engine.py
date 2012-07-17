@@ -298,9 +298,7 @@ class Engine():
     def newExperiment(self):
         print "function new experiment"
         
-    def newUser1(self):
-        print "function new user"
-        
+       
     def newUser(self, user):
         """
         New User has been found, need to communicate to myself and all workers the new details
