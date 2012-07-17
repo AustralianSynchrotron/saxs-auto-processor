@@ -34,7 +34,8 @@ class LogWatcher():
         Used to kill the current log watcher thread, used it we need to restart/change user
         """
         self.alive = False
-        self.thread.join()
+        if self.thread:
+            self.thread.join()
 
     def watch(self):
         """
@@ -48,20 +49,27 @@ class LogWatcher():
         """
         Here we watch constantly for a new line to be created
         """
+        logfile = self.logLocation
+        print "Waiting for: %s" % logfile
 
-        while True:
+        start_time = time.time()
+        while self.alive:
             try:
-                fp = open(self.logLocation,'r')
+                fp = open(logfile,'r')
+                print fp
                 break
             except IOError:
-                print "Waiting for logFile"
-                print self.logLocation
                 time.sleep(0.5);
+            finally:
+                if time.time()-start_time > 30.0: 
+                    print "Timeout waiting for: %s" % logfile
+                    return                
+        if self.alive:
+            print "Got logfile: %s" % logfile 
+        else:
+            print "Killed while waiting for: %s" % logfile 
+            return
             
-            #other shit here for if file dont exist
-        
-        print "In FileWatch"
-        
         while self.alive:
             new = fp.readline()
             if new:
@@ -73,6 +81,7 @@ class LogWatcher():
         """
             This returns every new line back up to the call back
         """
+        self.alive = True
         for line in self.fileWatch():
             print line
             self.callback(line)
