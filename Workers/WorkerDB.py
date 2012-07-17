@@ -46,7 +46,10 @@ class WorkerDB(Worker):
             print obj['line'].data["SampleType"]
         
         if (command == "createDB"):
-            self.createDB(self.user)
+            try:
+                self.createDB(obj['database'])
+            except KeyError:
+                self.createDB(self.user)
         
    
     def connect(self, pullPort = False, subPort = False):
@@ -146,50 +149,50 @@ class WorkerDB(Worker):
         pass
     
     
-    def setUser(self, user):
-        self.user = str(user)
-        self.logger.info("User set to %(user)s" % {'user':self.user})
-
-    def createDB(self, user):
+    def createDB(self, dbname):
         """
         Force creates a database in the local mysql
         """
+        if not dbname:
+            self.logger.critical("Empty dbname!")
+            return
+        self.logger.info("Creating database: '%(dbname)s'" % {'dbname':dbname})
         database = self.config.get('database')
             
         try:
             db = mysql.connect(user=database['user'], host=database['host'], passwd=database['passwd'])
             c = db.cursor()
-            cmd = "CREATE DATABASE IF NOT EXISTS " + str(user) + ";"
+            cmd = "CREATE DATABASE IF NOT EXISTS %s;" % (dbname, )
             c.execute(cmd)      
         except Exception:
             raise
         
-        self.buildTables()
+        self.buildTables(dbname)
         
-    def buildTables(self):
+    def buildTables(self, dbname):
         """
         Uses SQL Alchemy to create logtable objects that build the tables inside the database and then allow for data to be written against it
         """
         collumAttributes = ['WashType', 'SampleOmega', 'FilePluginDestination', 'Temperature2', 'Temperature1', 'WellNumber', 'SamplePhi', 'NumericTimeStamp', 'I0', 'SampleY', 'SampleX', 'SampleChi', 'TimeStamp', 'SampleType', 'ImageCounter', 'Ibs', 'exptime', 'FilePluginFileName', 'Energy', 'It', 'SampleTableX', 'SampleTableY', 'NORD', 'ImageLocation']
 
         #collumAttributes_old = ['I0', 'NumericTimeStamp', 'WashType', 'FilePluginDestination', 'TimeStamp', 'Energy', 'NORD', 'SampleType', 'It', 'SampleTableX', 'SampleTableY', 'Temperature2', 'Temperature1', 'WellNumber', 'Ibs', 'exptime', 'FilePluginFileName', 'ImageLocation']
-        self.logTable = TableBuilder.TableBuilder(self.config, self.user, "Log", collumAttributes)
+        self.logTable = TableBuilder.TableBuilder(self.config, dbname, "Log", collumAttributes)
         
         #This needs to bs fixed to support different sample types
         bufferColumns = ['buffer_location']
-        self.bufferTable = TableBuilder.TableBuilder(self.config, self.user, 'buffers', bufferColumns)
+        self.bufferTable = TableBuilder.TableBuilder(self.config, dbname, 'buffers', bufferColumns)
         
         subtractedColumns = ['subtracted_location', 'avg-low-q', 'avg-high-q', 'valid']
-        self.subtractedTable = TableBuilder.TableBuilder(self.config, self.user, 'subtracted_images', subtractedColumns)
+        self.subtractedTable = TableBuilder.TableBuilder(self.config, dbname, 'subtracted_images', subtractedColumns)
         
         averagedColumns = ['average_location']
-        self.averagedTable = TableBuilder.TableBuilder(self.config, self.user, 'average_images', averagedColumns)
+        self.averagedTable = TableBuilder.TableBuilder(self.config, dbname, 'average_images', averagedColumns)
         
         averagedSubColumns = ['average_subtracted_location', 'porod_volume']
-        self.averagedSubTable = TableBuilder.TableBuilder(self.config, self.user, 'average_subtracted_images', averagedSubColumns)
+        self.averagedSubTable = TableBuilder.TableBuilder(self.config, dbname, 'average_subtracted_images', averagedSubColumns)
         
         damVolColumns = ['dammif_pdb_file', 'dam_volume', 'average_subtracted_images_fk']
-        self.damVolTable = TableBuilder.TableBuilder(self.config, self.user, 'dam_volumes', damVolColumns)
+        self.damVolTable = TableBuilder.TableBuilder(self.config, dbname, 'dam_volumes', damVolColumns)
 
     
     
@@ -232,7 +235,10 @@ if __name__ == "__main__":
     context = zmq.Context()
     port = 1211
     
-    worker = WorkerDB()
+    with open("../settings.conf", 'r') as config_file:
+        config = yaml.load(config_file)
+            
+    worker = WorkerDB(config)
     print worker.getName()
 
     t = Thread(target=worker.connect, args=(port,))
@@ -243,4 +249,7 @@ if __name__ == "__main__":
     testPub.connect("tcp://127.0.0.1:"+str(port))
 
     testPub.send_pyobj({'command' : "test"})
+    testPub.send_pyobj({'command' : "update_user", "user":"testuser"})
+    testPub.send_pyobj({'command' : "createDB"})
+    testPub.send_pyobj({'command' : "createDB", "database":"testdb"})
     testPub.send_pyobj({'command' : "shut_down"})
