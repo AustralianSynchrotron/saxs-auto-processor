@@ -208,20 +208,13 @@ class Engine():
         Callback:
             lineCreated()
         
-        """      
+        """              
+        self.logWatcher.kill()
         self.logWatcher.setLocation(logLocation)
         self.logWatcher.setCallback(self.lineCreated)
         self.logWatcher.watch()
         
-    def killLogWatcher(self):
-        """
-        Kills Log Watcher Object
-        """
-        self.logWatcher.kill()
-
-
-
-        
+       
     def setUser(self, char_value, **kw):
         """
         | Sets the User for the Engine, and all workers.
