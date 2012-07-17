@@ -30,12 +30,10 @@ def testStringChange(string, previousString = None):
         if (previousString != string):
             return True
         
-def createFolderStructure(rootDirectory, user):
+def createFolderStructure(fullPath):
     """
     Creates Directory structure if it is not already present
     """
-    fullPath = rootDirectory + "/"+ user
-   
     try:
         os.makedirs(fullPath)
         os.makedirs(fullPath + "/images/")

@@ -228,73 +228,25 @@ class Engine():
             \*\*kw (dict): remaining values returned from epics
             
         """
-        self.logger.info("User Change Event")
+        self.logger.info("Experiment Change Event\n----------------------------------------")
         
         #user = getUser(char_value)
         
-        if (self.experimentFolderOn):
-            print "Experiment folder on"
-            experiment = getString(char_value, -2)
+        if self.experimentFolderOn:
+            experimentFolder = getString(char_value, -2)
             user = getString(char_value, -3)
-            
-            print "EXPERIMENT : %s" % experiment
-            print "USER : %s" % user
-
-            #Test user change
-            if (testStringChange(user, self.previousUser)):
-                print "USER CHANGE, SO YES experiment CHANGE \nRUN user.change with experiment!"
-                self.previousUser = user
-                self.previousExperiment = experiment
-                self.newUser(user)
-
-            else:
-                print "NO USER CHANAGE"
-                
-                print "BETTER CHECK IF EXPERIMENT CHANGED!"
-                if (testStringChange(experiment, self.previousExperiment)):
-                    print "EXPERUIMENT CHANGE!"
-                    self.previousExperiment = experiment
-                    self.newExperiment()
-                else:
-                    print "Nothing changed, user nor experiment"
-                    pass
-            
-
-        #experiment filder is off, onlty just againse user
         else:
-            print "exerpimetn folder off, on;y check user"
+            experimentFolder = ""
             user = getString(char_value, -2)
-            print "USER: %s" % user
-            
-            if testStringChange(user, self.previousUser):
-                print "USER HAS CHANGED, run new user"
-                self.previousUser = user
-                self.newUser(user)
 
-            else:
-                print "NO USER CHANGE DO NOTHING"
-                pass
-            
-                
-                
-                
-        """    
-        else:
-            user = getUser(char_value, -2)
-            if (testUserChange(user, self.previousUser)):
-                self.previousUser = user
-                self.newUser(user)
-            else:
-                pass
-        """
+        if self.previousUser != user or self.previousExperiment != experimentFolder:        
+            self.previousUser = user; self.previousExperiment = experimentFolder
+            self.setupExperiment(user, experimentFolder)
+
         
-    def newExperiment(self):
-        print "function new experiment"
-        
-       
-    def newUser(self, user):
+    def setupExperiment(self, user, experimentFolder = ""):
         """
-        New User has been found, need to communicate to myself and all workers the new details
+        New User or Experiment has been found, need to communicate to myself and all workers the new details
         A new Database is created
         And the engine commences watching the logfile.
         
@@ -302,30 +254,28 @@ class Engine():
             user (string): string value of the user
          
         """
-        
-        
-        self.logger.info("New User Requested")
+                
+        self.logger.info("Setting up new experiment")
         #Reset class variables for controlling logic and data
         self.first = True
         self.logLines = []
         self.needBuffer = True
         
-        self.user = user
-        self.liveLog = os.path.join(self.rootDirectory, self.user, "images/livelogfile.log")
-        self.datFileLocation = os.path.join(self.rootDirectory, self.user, "raw_dat/")
+        absolute_directory = os.path.join(self.rootDirectory, user, experimentFolder)
+        self.liveLog = os.path.join(absolute_directory, "images", "livelogfile.log")
+        self.datFileLocation = os.path.join(absolute_directory, "raw_dat")
         
         #Generate Directory Structure
-        createFolderStructure(self.rootDirectory, self.user)
+        createFolderStructure(absolute_directory)
         self.logger.info("Directory Structure Created")
         
         #Update all workers
-        self.sendCommand({"command":"update_user", "user":self.user})
-        self.sendCommand({"command":"absolute_directory","absolute_directory":os.path.join(self.rootDirectory, self.user)})
+        self.sendCommand({"command":"update_user", "user":user})
+        self.sendCommand({"command":"absolute_directory","absolute_directory":absolute_directory})
         
         
-        
-        
-        self.createDB()
+        dbname = "_".join(filter(None, [user, experimentFolder]))
+        self.createDB(dbname)
         
         #Start waiting for log to appear
         self.watchForLogLines(self.liveLog) # Start waiting for the Log
@@ -539,12 +489,12 @@ class Engine():
         """
         self.connectedWorkers['WorkerDB'].send_pyobj({"command":"log_line", "line":line})
         
-    def createDB(self):
+    def createDB(self, database):
         """
         Create the specified database for the new user
         """
         
-        self.connectedWorkers['WorkerDB'].send_pyobj({"command":"createDB"})
+        self.connectedWorkers['WorkerDB'].send_pyobj({"command":"createDB", "database":database})
         
     def requestAveragedBuffer(self):
         """
