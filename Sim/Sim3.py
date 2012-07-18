@@ -31,6 +31,7 @@ class Sim3():
         config = yaml.load(stream)
         self.rootDirectory = config.get('RootDirectory')
         self.userChangePV = config.get('UserChangePV')   
+        self.ExperimentFolderOn = config.get('ExperimentFolderOn')   
         
         
         #Experiment Name might need to be implemented..
@@ -88,11 +89,13 @@ class Sim3():
                         
                 if (option == "4"):
                     user = raw_input("Enter User: ")
+                    if self.ExperimentFolderOn:
+                        expName =  raw_input("Enter Experiment: ")
                     timeout = raw_input("Timeout: ")
                     print timeout
                     if (len(timeout) == 0):
                         timeout = 0.1
-                    self.runExperiment(user, "livelogfile.log", float(timeout))
+                    self.runExperiment(user, "livelogfile.log", float(timeout), expName)
                 
                 if (option == "5"):
                     self.clearUsers()
@@ -143,12 +146,22 @@ class Sim3():
         self.location = self.rootDirectory + "/" + user + "/"
         
         
-    def runExperiment(self, user, logFile, timeout = 0.1):
-        self.sendUser(user)
-        self.setLocation(user)
+    def runExperiment(self, user, logFile, timeout = 0.1, expName = ""):
+        if self.ExperimentFolderOn:
+            if not expName:
+                print "Exp folder on and no exp given"
+                return
+            self.sendUser(user + "/" + expName)
+            self.setLocation(user + "/" + expName)                
+        else:
+            self.sendUser(user)
+            self.setLocation(user)
         time.sleep(0.1) #Give some time for the engine to check directories, and create if needed
-        self.createLog(user)
-        
+        if self.ExperimentFolderOn:
+            self.createLog(user + "/" + expName)
+        else:
+            self.createLog(user)
+            
         self.logFile = open("../data/"+logFile)
         line = self.logFile.readline()
         datFiles = glob.glob("../data/data/")
@@ -170,7 +183,7 @@ class Sim3():
                 print e
                 pass
             
-            print "Ran"
+            print line
             self.writeLine(line)
             
             line = self.logFile.readline()
