@@ -9,22 +9,6 @@ auto-processor Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`fileWatcher` Module
--------------------------
-
-.. automodule:: fileWatcher
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`openProcess_test` Module
-------------------------------
-
-.. automodule:: openProcess_test
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
