@@ -336,23 +336,21 @@ class Engine():
             | or, returns False if nothing is found
         
         """
-        imageName = os.path.basename(fullPath)
-        imageName = os.path.splitext(imageName)[0]
-        datFileName = imageName + ".dat"
-
+        imageName, extension = os.path.splitext(os.path.basename(fullPath))
+        datFileName = os.path.join(self.datFileLocation , "%s.dat" % imageName)
         
         time.sleep(0.1) #have a little snooze to make sure the image has been written
         self.logger.info("Looking for DatFile %s" % datFileName)
    
         startTime = time.time()
-        while not os.path.isfile(self.datFileLocation + datFileName):
+        while not os.path.isfile(datFileName):
             self.logger.info("Waiting for the %s" % datFileName)
             time.sleep(0.5)
             if (time.time() - startTime > 3.0):
                 self.logger.critical("DatFile: %s - could not be found - SKIPPING" % datFileName)
                 return False
         
-        datFile = DatFile.DatFile(self.datFileLocation +  datFileName)
+        datFile = DatFile.DatFile(datFileName)
         self.logger.info("DatFile: %s - has been found" % datFileName)
         return datFile
    
