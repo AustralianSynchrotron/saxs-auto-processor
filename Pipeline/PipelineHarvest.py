@@ -63,10 +63,17 @@ class PipelineHarvest:
         folders = path.split('/')
         
         
-        if self.ExperimentFolderOn: # user folder and experiment folder
-            database_name = folders[-4]
-        else: # only user folder
-            database_name = folders[-3]
+        if self.ExperimentFolderOn: 
+            # database name is user folder name plus and experiment folder name
+            # eg. /beam/user/myexp/analysis/file_to_harvest
+            user_folder = folders[-4]
+            experiment_folder = folders[-3]
+            database_name = user_folder + '_' + experiment_folder
+        else:
+            # database name would be only user folder name
+            # eg. /beam/user/analysis/file_to_harvest
+            user_folder = folders[-3]
+            database_name = user_folder
         
         if value_type == "porod_volume":
             table_name = "average_subtracted_images"
