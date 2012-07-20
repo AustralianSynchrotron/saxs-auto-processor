@@ -41,14 +41,6 @@ Core Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`DirectoryCreator` Module
-------------------------------
-
-.. automodule:: Core.DirectoryCreator
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`EngineFunctions` Module
 -----------------------------
 
