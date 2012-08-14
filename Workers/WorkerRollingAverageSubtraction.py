@@ -67,8 +67,12 @@ class WorkerRollingAverageSubtraction(Worker):
         """
         self.datFiles.append(datFile)
         intensities = []
+        
+        self.rejection.process(self.datFiles)
+
         for datFile in self.datFiles:
-            intensities.append(datFile.getIntensities())
+            if datFile.isValid():
+                intensities.append(datFile.getIntensities())
         
         datName = "avg_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
         averagedIntensities = self.averageList.average(intensities)

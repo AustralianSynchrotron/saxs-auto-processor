@@ -90,8 +90,12 @@ class WorkerBufferAverage(Worker):
         """
         self.buffers.append(buffer)
         intensities = []
+
+        self.rejection.process(self.buffers)
+
         for buffer in self.buffers:
-            intensities.append(buffer.getIntensities())
+            if buffer.isValid():
+                intensities.append(buffer.getIntensities())
             
         datName = "avg_buffer_" + str(self.bufferIndex) + "_" +buffer.getBaseFileName()
         self.averagedIntensities = self.averageList.average(intensities)

@@ -11,6 +11,7 @@ from threading import Thread
 from Core import AverageList
 from Core import DatFile
 from Core import DatFileWriter
+from Core import OutLierRejection
 
 
 class Worker():
@@ -31,6 +32,7 @@ class Worker():
         #Class objects
         self.datWriter = DatFileWriter.DatFileWriter()
         self.averageList = AverageList.AverageList()
+        self.rejection = OutLierRejection.OutLierRejection()
         
         #Class Variables
         self.logger = None
