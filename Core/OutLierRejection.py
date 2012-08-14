@@ -21,46 +21,63 @@ class OutLierRejection():
         
         Sets the reference valid value to True or False of the DatFile
         """
-        if (len(datFiles) == 1 or len(datFiles) == 0):
+        if len(datFiles) == 0:
             return False
         else:
             ILQ = []
             IHQ = []
             for dat in datFiles:
-                ILQ.append(dat.getILQ())
                 IHQ.append(dat.getIHQ())
                 
-            ihqThreshold = (0.95 * max(IHQ))
-            ilqThreshold = (1.05 * min(ILQ))
+            ihqThreshold = (0.92 * max(IHQ))
             
-            print "IQL Threshold: ", str(ilqThreshold)
             print "IHQ Threshold: ", str(ihqThreshold)
             
             for dat in datFiles:
-                if ((dat.getIHQ() < ihqThreshold) or (dat.getILQ() > ilqThreshold)):
-                    print dat.getFileName()
-                    print "FAILED"
-                else:
-                    print "valid"
-                    #print dat.getIHQ()
-                    #print dat.getILQ()
-                    dat.setValid(True)
-
-
+                if not (dat.getIHQ() < ihqThreshold):
+                    dat.setValid(True)  
+            
+            for dat in datFiles:
+                if dat.isValid():
+                    ILQ.append(dat.getILQ())
+    
+            ilqThreshold = (1.08 * min(ILQ))
+            print "IQL Threshold: ", str(ilqThreshold)
+            
+            for dat in datFiles:
+                if (dat.getILQ() > ilqThreshold):
+                    dat.setValid(False)
 
 if __name__ == '__main__':
     outerlierTest = OutLierRejection()
     print "Running - Outlier Rejection"
     
-    datC = glob.glob('testData/35C_naPhos_nacl_ph7c*')
-    datD = glob.glob('testData/35C_naPhos_nacl_ph7d*')
-
+    datC = glob.glob('C1z_buffer_1p6m_0020.dat')
+    datD = glob.glob('C1active_buffer*')
+    datF = glob.glob('C1q_buffer*')
+    
     dC = []
-
+    dD = []
+    dF = []
 
     for files in datC:
         dC.append(DatFile.DatFile(files))
     outerlierTest.process(dC)
 
+    for dat in dC:
+        print dat.getFileName(), dat.isValid(), dat.getIHQ(), dat.getILQ()
 
 
+    for files in datD:
+        dD.append(DatFile.DatFile(files))
+    outerlierTest.process(dD)
+
+    for dat in dD:
+        print dat.getFileName(), dat.isValid(), dat.getIHQ(), dat.getILQ()
+
+    for files in datF:
+        dF.append(DatFile.DatFile(files))
+    outerlierTest.process(dF)
+
+    for dat in dF:
+        print dat.getFileName(), dat.isValid(), dat.getIHQ(), dat.getILQ()
