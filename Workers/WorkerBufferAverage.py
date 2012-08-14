@@ -73,7 +73,10 @@ class WorkerBufferAverage(Worker):
         """            
         self.logger.info("Processing Received object")
         command = str(obj['command'])
-        
+
+        if (command == "new_buffer"):
+           self.newBuffer()
+
         if (command == "buffer"):
             buffer = obj['buffer']
             self.logger.info("Buffer Sample")
@@ -132,6 +135,7 @@ class WorkerBufferAverage(Worker):
         | Clears out the current buffer as expecting new one.
         | Increments sample number
         """
+        self.buffers = []
         self.averagedBuffer = None
         self.bufferIndex = self.bufferIndex + 1
     
