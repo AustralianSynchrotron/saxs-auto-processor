@@ -1,6 +1,6 @@
 import os
 
-class DatFile:
+class DatFile(object):
     """
     Takes a path to a datFile, parses it and calculates the respective High/Low Q's
      
@@ -40,18 +40,15 @@ class DatFile:
         """
         return os.path.basename(self.datFilePath)
     
+    def getRootName(self):
+        return "_".join(self.getFileName().split("_")[:-1])
+    
     def getBaseFileName(self):
         """
         | Returns the base name of the sample type
         | eg: SampleType1_1555.dat becomes SampleType1.dat
         """
-        fileName = self.getFileName()
-        h = fileName.split("_")
-        del h[-1]
-        g = ""
-        for i in h:
-            g = g + i + "_"
-        return g + ".dat"
+        return "%s.dat" % (self.getRootName(), )
 
     def getDatFilePath(self):
         return self.datFilePath
@@ -111,30 +108,21 @@ class DatFile:
         | Based off some code by Nathan Cowieson
         """
 
-        f  = self.openDatFile()
-        line = f.readline()
-        numLines = 0
-        while line:
-            b =  line.split()
-            try:
-                q = float(b[0])
-                i = float(b[1])
-                e = float(b[2])
-                self.q.append(q)
-                self.intensities.append(i)
-                self.errors.append(e)
-            except IndexError:
-                pass
-            except ValueError:
-                pass
+        with open(self.datFilePath) as f:
+            for line in f:
+                b =  line.split()
+                try:
+                    q = float(b[0])
+                    i = float(b[1])
+                    e = float(b[2])
+                    self.q.append(q)
+                    self.intensities.append(i)
+                    self.errors.append(e)
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
             
-            line = f.readline()
-            numLines = numLines + 1
-
-            
-        self.closeDatFile(f)
-        self.setNumLines(numLines)
-        
     def getValues(self):
         """
         Returns a dictionary of all the values
