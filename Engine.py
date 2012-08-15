@@ -482,15 +482,20 @@ class Engine():
         Args:
             line (LogLine object): LogLine object that you want to write to the DB
         """
-        self.connectedWorkers['WorkerDB'].send_pyobj({"command":"log_line", "line":line})
-        
+        try:
+            self.instanceWorkerDict['WorkerDB'].runCommand({"command":"log_line", "line":line})
+        except Exception:
+            self.logger.error("Failed to insert LogLine")
+
     def createDB(self, database):
         """
         Create the specified database for the new user
         """
-        
-        self.connectedWorkers['WorkerDB'].send_pyobj({"command":"createDB", "database":database})
-        
+        try:
+            self.instanceWorkerDict['WorkerDB'].runCommand({"command":"createDB", "database":database})
+        except Exception:
+            self.logger.error("Failed to createDB")
+
     def requestAveragedBuffer(self):
         """
         Request from the WorkerBufferAverage for the current averaged buffer
