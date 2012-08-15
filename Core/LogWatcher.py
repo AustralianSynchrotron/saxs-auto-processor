@@ -83,7 +83,6 @@ class LogWatcher():
         """
         self.alive = True
         for line in self.fileWatch():
-            print line
             self.callback(line)
 
 
