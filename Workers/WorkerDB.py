@@ -43,7 +43,6 @@ class WorkerDB(Worker):
         command = str(obj['command'])
         if (command == "log_line"):
             self.writeLogToDB(obj['line'])
-            print obj['line'].data["SampleType"]
         
         if (command == "createDB"):
             try:
@@ -117,7 +116,6 @@ class WorkerDB(Worker):
                 
                 if (command == "test"):
                     self.logger.info("Gotten TEST COMMMAND")
-                    print recievedObject["value"]
                     continue
         except KeyboardInterrupt:
                 pass

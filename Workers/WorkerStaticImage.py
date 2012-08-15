@@ -44,22 +44,15 @@ class WorkerStaticImage(Worker):
     def setBuffer(self, buffer):
         self.averagedBuffer = buffer
         self.logger.info("Set Averaged Buffer")
-        print "DA BUFFER"
-        print self.averagedBuffer
         
     def subtractBuffer(self, datFile, buffer):
         """Method for subtracting buffer from static sample """
         if (buffer):
             newIntensities = []
-            print datFile.getIntensities()
             for i in range(0, len(datFile.getIntensities())):
                 newIntensities.append(datFile.getIntensities()[i] - buffer[i])
 
             self.logger.info("Subtracting Buffer")
-            print datFile
-            print buffer
-            print "######"
-            print newIntensities
             
             datName = "raw_sub_"+datFile.getFileName()
             
