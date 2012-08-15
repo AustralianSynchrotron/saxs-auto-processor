@@ -1,13 +1,6 @@
 import sys
-try:
-    import zmq
-except ImportError, e:
-    print "ERROR:", e, "which is essential to run auto-processor."
-    # sys.exit(2) #this line terminated sphinx docs building on readthedocs.
 sys.path.append("../")
-import time
 import logging
-from threading import Thread
 from Core import AverageList
 from Core import DatFile
 from Core import DatFileWriter
