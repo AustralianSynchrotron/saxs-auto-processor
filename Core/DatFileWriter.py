@@ -1,4 +1,4 @@
-import os
+import os, StringIO
 
 
 class DatFileWriter:
@@ -38,16 +38,19 @@ class DatFileWriter:
         if not os.path.exists(self.location):
             os.makedirs(self.location)
                    
-        loc = self.location+self.datName                
-        f = open(loc, 'w')
+        loc = os.path.join(self.location,self.datName)
+
+        f = StringIO.StringIO()
         f.write(self.datName + "\n")
         formatting  = '%'+str(4 + self.accuracy)+'s %'+str(6 + self.accuracy)+'s %'+str(6 + self.accuracy)+'s \n'
         f.write(formatting % ('q', 'I', 'Err')) #Needed for string formatting
         for i in range(len(self.data['q'])):
             formatting = '%'+str(8 + self.accuracy)+'.'+str(self.accuracy)+'f %'+str(6 + self.accuracy)+'.'+str(self.accuracy)+'f %'+str(6 + self.accuracy)+'.'+str(self.accuracy)+'f \n'
-            f.write(formatting % (self.data['q'][i], self.data['i'][i], self.data['errors'][i]))        
+            f.write(formatting % (self.data['q'][i], self.data['i'][i], self.data['errors'][i]))
+
+        with open(loc, 'w') as datfile:
+            datfile.write(f.getvalue())
         f.close()
-	#TODO: add to log what was written
 
         
 #test
