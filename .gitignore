@@ -4,7 +4,7 @@
 
 *.log
 
-
+env/
 data/
 .p*
 *.pyc
