@@ -91,67 +91,71 @@ class Worker():
         
         try:
             while True:
-                recievedObject = self.pull.recv_pyobj()
+                receivedObject = self.pull.recv_pyobj()
                 self.logger.info("Received Object")
-                try:
-                    command = str(recievedObject['command'])
-                except KeyError:
-                    self.logger.error("No command key sent with object, can not process request")
-                    continue
-                
-                #Default Commands            
-                if (command == "update_user"):
-                    self.clear()
-                    try:
-                        self.setUser(recievedObject['user'])
-                    except KeyError:
-                        self.logger.error("Malformed command dictionary")
-                    continue
-                    
-                if (command == "absolute_directory"):
-                    self.setDirectory(recievedObject['absolute_directory'])
-                    continue
-                
-                if (command == "root_name_change"):
-                    self.rootNameChange()
-                    continue
-                
-                if (command == "new_buffer"):
-                    self.newBuffer()
-                    continue
-                
-                if (command == "clear"):
-                    self.clear()
-                    continue
-                   
-                if (command == "shut_down"):
+                if (self.runCommand(receivedObject) == False):
                     break
-               
-                #Test commands
-                if (command == "test"):
-                    self.logger.info("test command received")
-                    continue
-                 
-                if (command == "test_receive"):
-                    print recievedObject['test_receive']
-                    continue
-                
-                if (command == "get_variables"):
-                    print self.user
-                    print self.absoluteLocation
-                    print self.getName()
-                    
-                else:
-                    self.processRequest(command, recievedObject)      
-                    continue
-               
-               
+                               
         except KeyboardInterrupt:
                 pass
         
         self.logger.info("Shutting Down")
         self.close()
     
+    def runCommand(self, receivedObject):
+        
+        try:
+            command = str(receivedObject['command'])
+        except KeyError:
+            self.logger.error("No command key sent with object, can not process request")
+            return
+        
+        #Default Commands            
+        if (command == "update_user"):
+            self.clear()
+            try:
+                self.setUser(receivedObject['user'])
+            except KeyError:
+                self.logger.error("Malformed command dictionary")
+            return
+            
+        if (command == "absolute_directory"):
+            self.setDirectory(receivedObject['absolute_directory'])
+            return
+        
+        if (command == "root_name_change"):
+            self.rootNameChange()
+            return
+        
+        if (command == "new_buffer"):
+            self.newBuffer()
+            return
+        
+        if (command == "clear"):
+            self.clear()
+            return
+           
+        if (command == "shut_down"):
+            return False
+       
+        #Test commands
+        if (command == "test"):
+            self.logger.info("test command received")
+            return
+         
+        if (command == "test_receive"):
+            print receivedObject['test_receive']
+            return
+        
+        if (command == "get_variables"):
+            print self.user
+            print self.absoluteLocation
+            print self.getName()
+            
+        else:
+            self.processRequest(command, receivedObject)      
+            return
+               
     
     #This must be overridden
     #It specifies how you want to process specific commands for workers   
