@@ -75,8 +75,8 @@ class Engine():
         #Instantiate all workers, get them all ready to push out into their own thread and connected up
         self.instanceWorkerDict = self.instantiateWorkers(self.workers)
         #Connect up workers
-        self.connectWorkers(self.instanceWorkerDict)    
-    
+        self.connectWorkersToDb()
+
     def setConfiguration(self, configuration):
         """Reads the default configuration file that is passed at object creation 
         The configuration stores the Workers that need to be loaded, whether an Experiment name is being used, this allows for any workers
@@ -189,6 +189,9 @@ class Engine():
 
         self.logger.info("All Workers connected and ready")
 
+    def connectWorkersToDb(self):
+        for workerName, worker in self.instanceWorkerDict.items():
+            worker.pub = self.instanceWorkerDict['WorkerDB']
 
     # Event Watching
     def setUserWatcher(self):
