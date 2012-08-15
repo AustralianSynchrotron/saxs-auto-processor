@@ -473,8 +473,8 @@ class Engine():
         
         """
         if (type(command) is dict):
-            for worker in self.connectedWorkers:
-                self.connectedWorkers[worker].send_pyobj(command)
+            for worker in self.instanceWorkerDict:
+                self.instanceWorkerDict[worker].runCommand(command)
         else:
             self.logger.critical("Incorrect Command datatype, must send a dictionary")
 
