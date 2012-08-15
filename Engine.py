@@ -310,19 +310,21 @@ class Engine():
             line (string): returned latest line from call back
             \*\*kw (dictionary): any more remaining values
         """
-        
-        latestLine = LogLine.LogLine(line)
-        self.logLines.append(latestLine)
-        
-        #Send off line to be written to db
-        self.sendLogLine(latestLine)
-        
-        if (latestLine.getValue("SampleType") == "0" or latestLine.getValue("SampleType") == "1"):
-            datFile = self.getDatFile(latestLine.getValue("ImageLocation"))
-            if (datFile):
-                self.processDat(latestLine, datFile)
-        else:
-            self.logger.info("Hey, it's a sample type I just don't care for!")
+        try:
+            latestLine = LogLine.LogLine(line)
+            self.logLines.append(latestLine)
+
+            #Send off line to be written to db
+            self.sendLogLine(latestLine)
+
+            if (latestLine.getValue("SampleType") == "0" or latestLine.getValue("SampleType") == "1"):
+                datFile = self.getDatFile(latestLine.getValue("ImageLocation"))
+                if (datFile):
+                    self.processDat(latestLine, datFile)
+            else:
+                self.logger.info("Hey, it's a sample type I just don't care for!")
+        except Exception:
+            self.logger.info("Failed to process log line")
    
    
     def getDatFile(self, fullPath):
