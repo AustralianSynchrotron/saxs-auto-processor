@@ -12,8 +12,6 @@ from threading import Thread
 from Worker import Worker
 from Core import DatFile
 
-
-
 class WorkerStaticImage(Worker):    
     """
     | Subtracts every image from buffer

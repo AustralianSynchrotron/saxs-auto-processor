@@ -25,7 +25,6 @@ class WorkerDB(Worker):
     """
     | Worker for controlling CRUD of database
     | Uses SQLAlchemy Library
-    | Utilises the PUB-SUB design pattern from ZMQ
     """
       
     def __init__(self, config, **kwargs):
@@ -33,10 +32,6 @@ class WorkerDB(Worker):
         
         self.db = None
         self.config = config
-        
-        #Specific ZMQ stuff for WorkerDB, it uses SUB/PUB
-        self.sub = self.context.socket(zmq.SUB)
-
         
     def processRequest(self, command, obj):                
         self.logger.info("Processing Received object")
@@ -50,51 +45,6 @@ class WorkerDB(Worker):
             except KeyError:
                 self.createDB(self.user)
         
-   
-    def connect(self, pullPort = False, subPort = False):
-        """
-        Over ridden connect funciton to support the subPort and sub type connection
-        
-        Raises:
-            Exception: ZMQ-Error if unable to connect
-        """
-        try:
-            if (pullPort):
-                self.pull.bind("tcp://127.0.0.1:"+str(pullPort))
-
-            if (subPort):
-                self.sub.bind("tcp://127.0.0.1:"+str(subPort))
-                self.sub.setsockopt(zmq.SUBSCRIBE, "")
-                
-                subThread = Thread(target=self.subscribe)
-                subThread.setDaemon(True)
-                subThread.start()
-                
-            self.logger.info("Connected Pull Port at: %(pullPort)s - Subscribed Port at: %(pubPort)s" % {'pullPort' : pullPort, 'pubPort' : subPort})
-        
-        except:  
-            self.logger.critical("ZMQ Error - Unable to connect")
-            raise Exception("ZMQ Error - Unable to connect")
-        
-        self.run()
-    
-    
-    def subscribe(self):
-        """
-        Function ran inside a thread, WorkerDB waits and responds to any published requests. for controlling what is written to the db and where
-        """        
-        try:
-            while True:
-                
-                receivedObject = self.sub.recv_pyobj()
-                self.logger.info("Received Object")
-                self.handleSubscriber(receivedObject)
-                
-        except KeyboardInterrupt:
-                pass
-        
-        self.close()
-    
     def send(self, receivedObject):
             self.handleSubscriber(receivedObject)
             
@@ -105,6 +55,7 @@ class WorkerDB(Worker):
         
         try:
             command = str(receivedObject['command'])
+            self.logger.info("Received command %s into WorkerDB." % (command,))
         except KeyError:
             self.logger.error("No command key sent with object, can not process request")
             return
@@ -135,24 +86,6 @@ class WorkerDB(Worker):
             self.logger.info("Gotten TEST COMMMAND")
             return
 
-        
-    def close(self):
-        """
-        Method for properly shutting down worker, includes the sub port
-        
-        Raises:
-            Exception: if it failed fo close port
-        """
-        try:
-            time.sleep(0.1)
-            self.sub.close()
-            self.logger.info("Closed ports - shutting down")
-        except:
-            self.logger.critical("Failed to close ports")
-            raise Exception("Failed to close ports")
-        finally:
-            sys.exit()
-            
     
     def rootNameChange(self):
         pass

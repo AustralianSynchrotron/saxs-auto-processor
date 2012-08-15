@@ -23,11 +23,8 @@ class Worker():
         #General Variables
         self.name = self.__class__.__name__
         
-        
-        #ZMQ stuff
-        self.context = zmq.Context()
-        self.pull = self.context.socket(zmq.PULL)
-        self.pub = self.context.socket(zmq.PUB)
+        #Instance of workerDB - will change variable name in future.
+        self.pub = None
         
         #Class objects
         self.datWriter = DatFileWriter.DatFileWriter()
@@ -41,71 +38,14 @@ class Worker():
         self.user = None
         self.absoluteLocation = None
         
-        
-        
         #Setup logging 
         self.setLoggingDetails()
-        
 
-
-        
-    def connect(self, pullPort = False, pubPort = False):
-        """
-        Connects worker to ZMQ ports
-         
-        Args:
-            PullPort: The pull side of the connection, the worker will always bind this
-            PubPort: The publish port, for publishing to the WorkerDB, always will be connect except at WorkerDB end
-        
-        Puts worker in run() where it will keep alive recieving commands
-        
-        Raises:
-            ZMQ-Error: if unable to connect
-        """
-        
-        try:
-            if (pullPort):
-                self.pull.bind("tcp://127.0.0.1:"+str(pullPort))
-
-            if (pubPort):
-                self.pub.connect("tcp://127.0.0.1:"+str(pubPort))
-                
-            self.logger.info("Connected Pull Port at: %(pullPort)s - Publish Port at: %(pubPort)s" % {'pullPort' : pullPort, 'pubPort' : pubPort})
-        
-        except:  
-            self.logger.critical("ZMQ Error - Unable to connect")
-            raise Exception("ZMQ Error - Unable to connect")
-        
-        self.run()
-
-
-        
-    
-    def run(self):
-        """
-        Is a while loop that parses the commands sent to it from the pull port, if no command is found after parses sends command object to processRequest
-        
-        Contains all the default commands and functions expected in every worker
-        
-        """
-        
-        try:
-            while True:
-                receivedObject = self.pull.recv_pyobj()
-                self.logger.info("Received Object")
-                if (self.runCommand(receivedObject) == False):
-                    break
-                               
-        except KeyboardInterrupt:
-                pass
-        
-        self.logger.info("Shutting Down")
-        self.close()
-    
     def runCommand(self, receivedObject):
         
         try:
             command = str(receivedObject['command'])
+            self.logger.info("Received command %s into Worker." % (command,))
         except KeyError:
             self.logger.error("No command key sent with object, can not process request")
             return
@@ -218,39 +158,15 @@ class Worker():
         self.logger.info("Cleared Details")
         self.user = None
         self.absoluteLocation = None 
-        
-    def close(self):
-        """
-        Close's ZMQ sockets correctly and kills workers
-        
-        Raises:
-            Exception: if it fails
-        
-        Finally:
-            Kills teh worker (sys.exit())
-        """
-        try:
-            time.sleep(0.1)
-            self.pull.close()  
-            self.logger.info("Closed ports")
-        except:
-            self.logger.critical("Failed to close ports")
-            raise Exception("Failed to close ports")
-        finally:
-            sys.exit()
-    
+
     #Generic method to publish data to the database worker
     def pubData(self, command):
         """
         Generic Function for publishing data
         """
         self.pub.send({'command':command})
-    
-    
-    
-    
-    
-    ###Logging Setup
+        
+        ###Logging Setup
     def setLoggingDetails(self):
         """
         Generic Logging Details
