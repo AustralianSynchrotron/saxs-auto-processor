@@ -21,7 +21,7 @@ class Worker():
     
     def __init__(self, name = "Default Worker"):
         #General Variables
-        self.name = name
+        self.name = self.__class__.__name__
         
         
         #ZMQ stuff
