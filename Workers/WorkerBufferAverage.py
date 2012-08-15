@@ -106,8 +106,11 @@ class WorkerBufferAverage(Worker):
             self.pub.send_pyobj({"command":"averaged_buffer", "location":datName})
             self.previousName = datName
 
-
-
+    def getAveragedBuffer(self):
+        if (self.averagedIntensities):
+            return self.averagedIntensities
+        else:
+            return False
     
     def requestBufferThread(self):
         """
