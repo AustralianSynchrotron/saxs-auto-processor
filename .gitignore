@@ -13,3 +13,5 @@ config.yaml
 settings.conf
 Core/testData
 Core/testData/*
+
+*.komodoproject
