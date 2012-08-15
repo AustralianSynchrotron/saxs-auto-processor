@@ -12,7 +12,6 @@ import os
 
 try:
     import epics
-    import zmq
     import yaml
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
@@ -68,10 +67,6 @@ class Engine():
         self.previousUser = None #Used to compare current user against new user (to stop if users click the pv etc)
         self.previousExperiment = None
 
-        #ZMQ Class Variables
-        self.zmqContext = zmq.Context()
-        self.requestBuffer = None
-
         #Instantiate all workers, get them all ready to push out into their own thread and connected up
         self.instanceWorkerDict = self.instantiateWorkers(self.workers)
         #Connect up workers
@@ -125,69 +120,6 @@ class Engine():
             instanceDict[worker] = x
         return instanceDict
 
-    def connectWorkers(self, instanceDict):
-        """
-        Connects all Workers to required ZMQ sockets
-        Loads each worker into a Daemon Thread
-        Uses Push for all workers
-        PUB/SUB for WorkerDB
-        REQ/REP for WorkerBufferAverage
-        
-        
-        Args:
-            instanceDict (dictionary): Dictionary created from instantiateWorkers
-        
-        Returns:
-            Nothing
-        
-        Sets Class Variables:
-            | self.connectedWorkers = Dictionary - key, Worker(string): push port(string)
-        
-        
-        """
-        
-        pushPort = 2000
-        pubPort = 1998
-        bufferRequestPort = 1999
-        
-        #Actual Worker Threads
-        workerThreads = {}
-        #Which worker, and which port are they on
-        workerPortLocation = {}
-        self.connectedWorkers = {}
-
-        #Start up a dictionary of threads, so we know where all the workers are        
-        for worker in instanceDict:
-            if (worker == "WorkerBufferAverage"):
-                workerThreads[worker] = Thread(target=instanceDict[worker].connect, args=(pushPort, pubPort, bufferRequestPort))
-                workerPortLocation[worker] = pushPort
-                self.requestBuffer = self.zmqContext.socket(zmq.REQ)
-                self.requestBuffer.connect("tcp://127.0.0.1:"+str(bufferRequestPort))
-                pushPort = pushPort + 1
-            else:
-                workerThreads[worker] = Thread(target=instanceDict[worker].connect, args=(pushPort, pubPort,))                            
-                workerPortLocation[worker] = pushPort #So we know where to send commands
-                pushPort = pushPort + 1
-            
-        #Set all workers as Daemon threads (so they all die when we close the application)
-        for workerThread in workerThreads:
-            workerThreads[workerThread].setDaemon(True)
-            
-        #Start all the threads
-        for workerThread in workerThreads:
-            workerThreads[workerThread].start()
-            time.sleep(0.1) #short pause to let them properly bind/connect their ports
-            
-        #Set up ZMQ context for each worker
-        for worker in workerPortLocation:
-            workerPortLocation[worker]
-            self.connectedWorkers[worker] = self.zmqContext.socket(zmq.PUSH)
-        
-        #connect workers to the engine
-        for worker in self.connectedWorkers:
-            self.connectedWorkers[worker].connect("tcp://127.0.0.1:"+str(workerPortLocation[worker]))
-
-        self.logger.info("All Workers connected and ready")
 
     def connectWorkersToDb(self):
         for workerName, worker in self.instanceWorkerDict.items():
@@ -501,19 +433,6 @@ class Engine():
         except Exception:
             self.logger.error("Failed to createDB")
 
-    def requestAveragedBuffer(self):
-        """
-        Request from the WorkerBufferAverage for the current averaged buffer
-        
-        Returns:
-            Averaged Buffer List
-        """
-        
-        self.requestBuffer.send("request_buffer")
-        buffer = self.requestBuffer.recv_pyobj()
-        return buffer
-    
-    
     def test(self):
         self.sendCommand({'command':"test"})
         time.sleep(0.1)
