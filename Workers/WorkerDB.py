@@ -86,41 +86,55 @@ class WorkerDB(Worker):
         try:
             while True:
                 
-                recievedObject = self.sub.recv_pyobj()
+                receivedObject = self.sub.recv_pyobj()
                 self.logger.info("Received Object")
-                try:
-                    command = str(recievedObject['command'])
-                except KeyError:
-                    self.logger.error("No command key sent with object, can not process request")
-                    continue
-
-                if (command == "averaged_buffer"):
-                    self.logger.info("Written location of averaged buffer")
-                    self.writeBufferLocation(recievedObject["location"])
-                    continue
+                self.handleSubscriber(receivedObject)
                 
-                if (command == "averaged_subtracted_sample"):
-                    self.logger.info("Written location of averaged_subtracted_sample")
-                    self.writeAveragedSubtactedLocation(recievedObject["location"])
-                    continue
-                
-                if (command == "averaged_sample"):
-                    self.logger.info("Written location of averaged_sample")
-                    self.writeAveragedLocation(recievedObject["location"])
-                    continue
-                
-                if (command == "subtracted_sample"):
-                    self.logger.info("Written location of subtracted_sample")
-                    self.writeSubtractionLocation(recievedObject["location"])
-                    continue
-                
-                if (command == "test"):
-                    self.logger.info("Gotten TEST COMMMAND")
-                    continue
         except KeyboardInterrupt:
                 pass
         
         self.close()
+    
+    def send(self, receivedObject):
+            self.handleSubscriber(receivedObject)
+            
+    def send_pyobj(self, receivedObject):
+            self.handleSubscriber(receivedObject)
+            
+    def handleSubscriber(self, receivedObject):
+        
+        try:
+            command = str(receivedObject['command'])
+        except KeyError:
+            self.logger.error("No command key sent with object, can not process request")
+            return
+        except TypeError:
+            self.logger.error("Command object not a dictionary, can not process request")
+            return
+        if (command == "averaged_buffer"):
+            self.logger.info("Written location of averaged buffer")
+            self.writeBufferLocation(receivedObject["location"])
+            return
+        
+        if (command == "averaged_subtracted_sample"):
+            self.logger.info("Written location of averaged_subtracted_sample")
+            self.writeAveragedSubtactedLocation(receivedObject["location"])
+            return
+        
+        if (command == "averaged_sample"):
+            self.logger.info("Written location of averaged_sample")
+            self.writeAveragedLocation(receivedObject["location"])
+            return
+        
+        if (command == "subtracted_sample"):
+            self.logger.info("Written location of subtracted_sample")
+            self.writeSubtractionLocation(receivedObject["location"])
+            return
+        
+        if (command == "test"):
+            self.logger.info("Gotten TEST COMMMAND")
+            return
+
         
     def close(self):
         """
