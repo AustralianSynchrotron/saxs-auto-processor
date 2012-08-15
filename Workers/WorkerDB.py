@@ -244,24 +244,15 @@ class WorkerDB(Worker):
             
 if __name__ == "__main__":
     #Test Cases
-    context = zmq.Context()
-    port = 1211
-    
+   
     with open("../settings.conf", 'r') as config_file:
         config = yaml.load(config_file)
             
     worker = WorkerDB(config)
     print worker.getName()
 
-    t = Thread(target=worker.connect, args=(port,))
-    t.start()
-    time.sleep(0.1)
-
-    testPub = context.socket(zmq.PUB)
-    testPub.connect("tcp://127.0.0.1:"+str(port))
-
-    testPub.send_pyobj({'command' : "test"})
-    testPub.send_pyobj({'command' : "update_user", "user":"testuser"})
-    testPub.send_pyobj({'command' : "createDB"})
-    testPub.send_pyobj({'command' : "createDB", "database":"testdb"})
-    testPub.send_pyobj({'command' : "shut_down"})
+    worker.runCommand({'command' : "test"})
+    worker.runCommand({'command' : "update_user", "user":"testuser"})
+    worker.runCommand({'command' : "createDB"})
+    worker.runCommand({'command' : "createDB", "database":"testdb"})
+    worker.runCommand({'command' : "shut_down"})
