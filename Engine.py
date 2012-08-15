@@ -397,9 +397,7 @@ class Engine():
                 
                 if (logLine.getValue("SampleType") == "1"):
                     if (self.needBuffer):
-                        averagedBuffer = self.requestAveragedBuffer()
-                        print "AVERAGED BUFFER"
-                        print averagedBuffer
+                        averagedBuffer = self.instanceWorkerDict['WorkerBufferAverage'].getAveragedBuffer()
                         if (averagedBuffer):
                             self.sendCommand({"command":"averaged_buffer", "averaged_buffer":averagedBuffer})
                             self.needBuffer = False
@@ -419,8 +417,7 @@ class Engine():
 
                 if (logLine.getValue("SampleType") == "1"):
                     if (self.needBuffer):
-                        averagedBuffer = self.requestAveragedBuffer()
-                        print averagedBuffer
+                        averagedBuffer = self.instanceWorkerDict['WorkerBufferAverage'].getAveragedBuffer()
                         if (averagedBuffer):
                             self.sendCommand({"command":"averaged_buffer", "averaged_buffer":averagedBuffer})
                             self.needBuffer = False
