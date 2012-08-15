@@ -134,7 +134,7 @@ class Engine():
             setUser()
         """
         
-        epics.camonitor(self.userChangePV, callback=self.setUser)
+        epics.PV(self.userChangePV, callback=self.setUser)
         
     def watchForLogLines(self, logLocation):
         """
