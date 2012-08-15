@@ -24,25 +24,20 @@ class OutLierRejection():
         if len(datFiles) == 0:
             return False
         else:
-            ILQ = []
             IHQ = []
             for dat in datFiles:
                 IHQ.append(dat.getIHQ())
-                
             ihqThreshold = (0.92 * max(IHQ))
-            
-            print "IHQ Threshold: ", str(ihqThreshold)
             
             for dat in datFiles:
                 if not (dat.getIHQ() < ihqThreshold):
                     dat.setValid(True)  
             
+            ILQ = []
             for dat in datFiles:
                 if dat.isValid():
                     ILQ.append(dat.getILQ())
-    
             ilqThreshold = (1.08 * min(ILQ))
-            print "IQL Threshold: ", str(ilqThreshold)
             
             for dat in datFiles:
                 if (dat.getILQ() > ilqThreshold):
