@@ -13,6 +13,7 @@ import traceback
 try:
     import epics
     import yaml
+    import redis
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
     #sys.exit(2) #this line terminated sphinx docs building on readthedocs.
@@ -28,6 +29,11 @@ from Core import LogWatcher
 from Core import LogLine
 from Core import DatFile
 
+class RedisLogLine(object):
+    def __init__(self, line):
+        self.data = line
+    def getValue(self, attribute):
+        return self.data[attribute]
 
 class Engine():
     """
@@ -144,10 +150,11 @@ class Engine():
             lineCreated()
         
         """              
-        self.logWatcher.kill()
-        self.logWatcher.setLocation(logLocation)
-        self.logWatcher.setCallback(self.lineCreated)
-        self.logWatcher.watch()
+        if (self.logWatcher):
+            self.logWatcher.kill()
+            self.logWatcher.setLocation(logLocation)
+            self.logWatcher.setCallback(self.lineCreated)
+            self.logWatcher.watch()
         
        
     def setUser(self, char_value, **kw):
@@ -227,9 +234,19 @@ class Engine():
             #Keep the script running
             time.sleep(0.1)
         
- 
- 
- 
+    def runRedis(self):
+        self.logWatcher = None
+
+        redis_config = self.config.get('redis')
+        r = redis.StrictRedis(**redis_config['conn'])
+        while True:
+            logline = r.hgetall(r.brpoplpush(redis_config['queues']['process_queue'], redis_config['queues']['processed_queue']))
+            imageFolder = os.path.dirname(logline['ImageLocation'])
+            # rootFolder, image = os.path.split(imageFolder)
+
+            # reuse existing directory setup
+            self.setUser(imageFolder)
+            self.lineCreated(RedisLogLine(logline))
  
     def lineCreated(self, line, **kw):
         """
@@ -243,7 +260,10 @@ class Engine():
             \*\*kw (dictionary): any more remaining values
         """
         try:
-            latestLine = LogLine.LogLine(line)
+            if(self.logWatcher): # if we are using the logwatcher the lines will be raw xml
+                latestLine = LogLine.LogLine(line)
+            else: # if not assume they have been setup already
+                latestLine = line
             self.logLines.append(latestLine)
 
             #Send off line to be written to db
@@ -464,7 +484,7 @@ class Engine():
 
 if __name__ == "__main__":
     eng = Engine("settings.conf")
-    eng.run()
+    eng.runRedis()
 
 
 
