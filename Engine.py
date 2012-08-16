@@ -319,9 +319,8 @@ class Engine():
         
         """
         
-        
         try:
-            if (changeInRootName(os.path.basename(self.logLines[-1].getValue("ImageLocation")), os.path.basename(self.logLines[-2].getValue("ImageLocation")))):
+            if ((len(self.logLines) <= 1) or changeInRootName(os.path.basename(self.logLines[-1].getValue("ImageLocation")), os.path.basename(self.logLines[-2].getValue("ImageLocation")))):
                 self.logger.info("There has been a change in the root name")
                 
                 self.sendCommand({"command":"root_name_change"})
@@ -371,10 +370,7 @@ class Engine():
 
        
         except IndexError:
-            if (self.first):
-                self.first = False
-            else:
-                self.logger.info("INDEX ERROR - Should only occur on first pass!")
+            self.logger.info("INDEX ERROR - Should never occur")
                    
 
 
