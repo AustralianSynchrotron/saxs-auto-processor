@@ -70,7 +70,10 @@ class Engine():
         #Instantiate all workers, get them all ready to push out into their own thread and connected up
         self.instanceWorkerDict = self.instantiateWorkers(self.workers)
         #Connect up workers
-        self.connectWorkersToDb()
+        try:
+            self.connectWorkersToDb()
+        except Exception:
+            pass
 
     def setConfiguration(self, configuration):
         """Reads the default configuration file that is passed at object creation 
@@ -461,10 +464,39 @@ class Engine():
         self.logger = logging.getLogger(self.name)
         self.logger.info("\nLOGGING STARTED")
 
+class FakeWorkerDB(object):
+    def send(*args, **kwargs):
+        pass
+    def send_pyobj(*args, **kwargs):
+        pass
+    def runCommand(*args, **kwargs):
+        pass
 
 if __name__ == "__main__":
     eng = Engine("settings.conf")
-    eng.run()
+
+    if len(sys.argv) > 1:
+        if len(sys.argv) != 2:
+            print "Usage: %s path_to_log " % __file__
+            sys.exit(0)
+
+        rootFolder = os.path.dirname(os.path.dirname(sys.argv[1]))
+        eng.datFileLocation = os.path.join(rootFolder, 'raw_dat')
+        if not os.path.exists(eng.datFileLocation):
+            print "Cannot find raw_dat folder in %s" % rootFolder
+            sys.exit(1)
+
+        # replace db worker with a fake one to cut down on errors
+        eng.instanceWorkerDict['WorkerDB'] = FakeWorkerDB()
+        eng.connectWorkersToDb()
+
+        eng.sendCommand({"command":"absolute_directory","absolute_directory":rootFolder})
+
+        with open(sys.argv[1]) as log:
+            for line in log:
+                eng.lineCreated(line)
+    else:
+        eng.run()
 
 
 
