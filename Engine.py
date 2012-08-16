@@ -8,7 +8,7 @@ import logging
 import sys
 import time
 import os
-
+import traceback
 
 try:
     import epics
@@ -255,8 +255,10 @@ class Engine():
                     self.processDat(latestLine, datFile)
             else:
                 self.logger.info("Hey, it's a sample type I just don't care for!")
-        except Exception:
-            self.logger.info("Failed to process log line")
+        except Exception, e:
+            self.logger.error("Failed to process log line: %s" % (e, ))
+            traceback.print_exc()
+
    
    
     def getDatFile(self, fullPath):
