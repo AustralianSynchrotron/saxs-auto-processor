@@ -163,7 +163,6 @@ class Engine():
             \*\*kw (dict): remaining values returned from epics
             
         """
-        self.logger.info("Experiment Change Event\n----------------------------------------")
         
         #user = getUser(char_value)
         
@@ -174,7 +173,8 @@ class Engine():
             experimentFolder = ""
             user = getString(char_value, -2)
 
-        if self.previousUser != user or self.previousExperiment != experimentFolder:        
+        if self.previousUser != user or self.previousExperiment != experimentFolder:
+            self.logger.info("Experiment Change Event\n----------------------------------------")
             self.previousUser = user; self.previousExperiment = experimentFolder
             self.setupExperiment(user, experimentFolder)
 
