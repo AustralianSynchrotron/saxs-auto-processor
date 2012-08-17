@@ -5,6 +5,8 @@ sys.path.append("../")
 try:
     import MySQLdb as mysql
     import yaml
+    import redis
+    import cPickle as pickle
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
     # sys.exit(2) #this line terminated sphinx docs building on readthedocs.
@@ -29,6 +31,13 @@ class WorkerDB(Worker):
         
         self.db = None
         self.config = config
+        #self.r = redis.StrictRedis(*config.get('redis').get('conn'))
+        self.redisMapping = {
+            'averaged_buffer':            'avg_buf',
+            'averaged_sample':            'avg_smp',
+            'subtracted_sample':          'sub_smp',
+            'averaged_subtracted_sample': 'avg_sub',
+        }
         
     def processRequest(self, command, obj):                
         self.logger.info("Processing Received object")
@@ -59,30 +68,40 @@ class WorkerDB(Worker):
         except TypeError:
             self.logger.error("Command object not a dictionary, can not process request")
             return
-        if (command == "averaged_buffer"):
-            self.logger.info("Written location of averaged buffer")
-            self.writeBufferLocation(receivedObject["location"])
-            return
         
-        if (command == "averaged_subtracted_sample"):
-            self.logger.info("Written location of averaged_subtracted_sample")
-            self.writeAveragedSubtactedLocation(receivedObject["location"])
-            return
-        
-        if (command == "averaged_sample"):
-            self.logger.info("Written location of averaged_sample")
-            self.writeAveragedLocation(receivedObject["location"])
-            return
-        
-        if (command == "subtracted_sample"):
-            self.logger.info("Written location of subtracted_sample")
-            self.writeSubtractionLocation(receivedObject["location"])
-            return
-        
-        if (command == "test"):
-            self.logger.info("Gotten TEST COMMMAND")
-            return
-
+        # publish to redis for web client
+        pickled = pickle.dumps({'filename': receivedObject['location'], 'profile': receivedObject['data']})
+        try:
+            self.r.publish("logline:pub:%s" % (self.redisMapping[command], ), pickled)
+            self.r.set("logline:%s" % (self.redisMapping[command], ), pickled)
+        except KeyError:
+            pass
+        try:
+            if (command == "averaged_buffer"):
+                self.logger.info("Written location of averaged buffer")
+                self.writeBufferLocation(receivedObject["location"])
+                return
+            
+            if (command == "averaged_subtracted_sample"):
+                self.logger.info("Written location of averaged_subtracted_sample")
+                self.writeAveragedSubtactedLocation(receivedObject["location"])
+                return
+            
+            if (command == "averaged_sample"):
+                self.logger.info("Written location of averaged_sample")
+                self.writeAveragedLocation(receivedObject["location"])
+                return
+            
+            if (command == "subtracted_sample"):
+                self.logger.info("Written location of subtracted_sample")
+                self.writeSubtractionLocation(receivedObject["location"])
+                return
+            
+            if (command == "test"):
+                self.logger.info("Gotten TEST COMMMAND")
+                return
+        except AttributeError:
+            pass #database isnt setup but we dont really care atm
     
     def rootNameChange(self):
         pass
