@@ -62,7 +62,7 @@ class WorkerBufferAverage(Worker):
         self.datWriter.writeFile(self.absoluteLocation + "/avg/", datName, { 'q' : self.buffers[-1].getq(), "i" : self.averagedIntensities, 'errors':self.buffers[-1].getErrors()})
         
         if not (self.previousName == datName):
-            self.pub.send_pyobj({"command":"averaged_buffer", "location":datName})
+            self.pub.send_pyobj({"command":"averaged_buffer", "location":datName, "data": zip(buffer.getq(), self.averagedIntensities)})
             self.previousName = datName
 
     def getAveragedBuffer(self):

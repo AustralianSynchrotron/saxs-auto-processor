@@ -49,7 +49,7 @@ class WorkerStaticImage(Worker):
 
             self.datWriter.writeFile(self.absoluteLocation + "/sub/raw_sub/", datName, { 'q' : datFile.getq(), "i" : newIntensities, 'errors':datFile.getErrors()})
             
-            self.pub.send_pyobj({"command":"subtracted_sample", "location":datName})
+            self.pub.send_pyobj({"command":"subtracted_sample", "location":datName, "data": zip(datFile.getq(), newIntensities)})
 
             
             
