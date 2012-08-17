@@ -239,6 +239,10 @@ class Engine():
 
         redis_config = self.config.get('redis')
         r = redis.StrictRedis(**redis_config['conn'])
+        
+        # reuse connection
+        self.instanceWorkerDict['WorkerDB'].r = r
+        
         while True:
             logline = r.hgetall(r.brpoplpush(redis_config['queues']['process_queue'], redis_config['queues']['processed_queue']))
             imageFolder = os.path.dirname(logline['ImageLocation'])
