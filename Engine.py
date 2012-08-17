@@ -11,8 +11,8 @@ import os
 import traceback
 
 try:
-    import epics
     import yaml
+    import epics
 except ImportError, e:
     print "ERROR:", e, "which is essential to run auto-processor."
     #sys.exit(2) #this line terminated sphinx docs building on readthedocs.
@@ -70,7 +70,10 @@ class Engine():
         #Instantiate all workers, get them all ready to push out into their own thread and connected up
         self.instanceWorkerDict = self.instantiateWorkers(self.workers)
         #Connect up workers
-        self.connectWorkersToDb()
+        try:
+            self.connectWorkersToDb()
+        except Exception:
+            pass
 
     def setConfiguration(self, configuration):
         """Reads the default configuration file that is passed at object creation 
@@ -278,14 +281,13 @@ class Engine():
         imageName, extension = os.path.splitext(os.path.basename(fullPath))
         datFileName = os.path.join(self.datFileLocation , "%s.dat" % imageName)
         
-        time.sleep(0.1) #have a little snooze to make sure the image has been written
         self.logger.info("Looking for DatFile %s" % datFileName)
    
         startTime = time.time()
         while not os.path.isfile(datFileName):
             self.logger.info("Waiting for the %s" % datFileName)
-            time.sleep(0.5)
-            if (time.time() - startTime > 3.0):
+            time.sleep(0.01)
+            if (time.time() - startTime > 1.0):
                 self.logger.critical("DatFile: %s - could not be found - SKIPPING" % datFileName)
                 return False
         
@@ -461,10 +463,41 @@ class Engine():
         self.logger = logging.getLogger(self.name)
         self.logger.info("\nLOGGING STARTED")
 
+class FakeWorkerDB(object):
+    def send(*args, **kwargs):
+        pass
+    def send_pyobj(*args, **kwargs):
+        pass
+    def runCommand(*args, **kwargs):
+        pass
 
 if __name__ == "__main__":
     eng = Engine("settings.conf")
-    eng.run()
+
+    if len(sys.argv) > 1:
+        if len(sys.argv) != 2:
+            print "Usage: %s path_to_log " % __file__
+            sys.exit(0)
+
+        rootFolder = os.path.dirname(os.path.dirname(sys.argv[1]))
+        eng.datFileLocation = os.path.join(rootFolder, 'raw_dat')
+        if not os.path.exists(eng.datFileLocation):
+            print "Cannot find raw_dat folder in %s" % rootFolder
+            sys.exit(1)
+
+        # replace db worker with a fake one to cut down on errors
+        eng.instanceWorkerDict['WorkerDB'] = FakeWorkerDB()
+        eng.connectWorkersToDb()
+
+
+        createFolderStructure(rootFolder)
+        eng.sendCommand({"command":"absolute_directory","absolute_directory":rootFolder})
+
+        with open(sys.argv[1]) as log:
+            for line in log:
+                eng.lineCreated(line)
+    else:
+        eng.run()
 
 
 

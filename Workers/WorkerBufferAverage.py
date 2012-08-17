@@ -1,9 +1,7 @@
 import logging
-import sys
+import sys, os
 from Worker import Worker
-from Core import AverageList
 from Core import DatFile
-from Core import DatFileWriter
 
 
 
@@ -19,7 +17,7 @@ class WorkerBufferAverage(Worker):
         
         #Specific Class Variables
         self.averagedBuffer = None
-        self.bufferIndex = 1
+        self.bufferIndex = None
         self.buffers = []
         self.averagedIntensities = None
         
@@ -47,41 +45,37 @@ class WorkerBufferAverage(Worker):
         """
         Function for averaging out and writing out the averaged buffer
         """
+        if not self.buffers:
+            self.bufferIndex = buffer.getIndex()
         self.buffers.append(buffer)
-        intensities = []
-
         self.rejection.process(self.buffers)
-
-        for buffer in self.buffers:
-            if buffer.isValid():
-                intensities.append(buffer.getIntensities())
-            
-        datName = "avg_buffer_" + str(self.bufferIndex) + "_" +buffer.getBaseFileName()
-        self.averagedIntensities = self.averageList.average(intensities)
+        self.averagedBuffer = DatFile.average([ buffer for buffer in self.buffers if buffer.isValid() ])
+        datName = "avg_buffer_%s_%s" % (self.bufferIndex, buffer.getBaseFileName())
+        self.averagedBuffer.datFilePath = os.path.join(self.absoluteLocation, "avg", datName)
         
-        self.datWriter.writeFile(self.absoluteLocation + "/avg/", datName, { 'q' : self.buffers[-1].getq(), "i" : self.averagedIntensities, 'errors':self.buffers[-1].getErrors()})
+        self.averagedBuffer.write()
         
         if not (self.previousName == datName):
             self.pub.send_pyobj({"command":"averaged_buffer", "location":datName})
             self.previousName = datName
 
     def getAveragedBuffer(self):
-        if (self.averagedIntensities):
-            return self.averagedIntensities
+        if (self.averagedBuffer):
+            return self.averagedBuffer
         else:
             return False
     
     def rootNameChange(self):
-        self.logger.info("Root Name Change Called - No Action Required")
-
+        pass
+    
     def newBuffer(self):
         """
         | Clears out the current buffer as expecting new one.
         | Increments sample number
         """
-        self.buffers = []
         self.averagedBuffer = None
-        self.bufferIndex = self.bufferIndex + 1
+        self.bufferIndex = None
+        self.buffers = []
     
     def clear(self):
         """
@@ -89,7 +83,7 @@ class WorkerBufferAverage(Worker):
         """
         Worker.clear(self)
         self.averagedBuffer = None
-        self.bufferIndex = 1
+        self.bufferIndex = None
         self.buffers = []
 
         

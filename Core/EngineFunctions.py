@@ -36,18 +36,38 @@ def createFolderStructure(fullPath):
     """
     try:
         os.makedirs(fullPath)
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/images/")
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/raw_dat/")
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/avg/")
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/sub/")
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/sub/raw_sub/")
+    except OSError:
+        pass
+    try:
         os.makedirs(fullPath + "/analysis/")
-        os.makedirs(fullPath + "/manual/")
-        os.makedirs(fullPath + "/manual/man_raw_dat/")
-        os.makedirs(fullPath + "/manual/man_avg/")
-        os.makedirs(fullPath + "/manual/man_sub/")
-        os.makedirs(fullPath + "/manual/man_sub/man_raw_sub/")
-        os.makedirs(fullPath + "/manual/man_analysis/")
+    except OSError:
+        pass
+        #os.makedirs(fullPath + "/manual/")
+        #os.makedirs(fullPath + "/manual/man_raw_dat/")
+        #os.makedirs(fullPath + "/manual/man_avg/")
+        #os.makedirs(fullPath + "/manual/man_sub/")
+        #os.makedirs(fullPath + "/manual/man_sub/man_raw_sub/")
+        #os.makedirs(fullPath + "/manual/man_analysis/")
     except OSError:
         pass
 

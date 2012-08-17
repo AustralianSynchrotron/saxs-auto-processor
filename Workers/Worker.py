@@ -38,7 +38,7 @@ class Worker():
         
         try:
             command = str(receivedObject['command'])
-            self.logger.info("Received command %s into Worker." % (command,))
+            #self.logger.info("Received command %s into Worker." % (command,))
         except KeyError:
             self.logger.error("No command key sent with object, can not process request")
             return

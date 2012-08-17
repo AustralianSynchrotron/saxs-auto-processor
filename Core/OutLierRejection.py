@@ -6,9 +6,6 @@ class OutLierRejection():
     A class that takes a list of DatFiles and changes the reference Valid value to True or False, based on Nathan Cowieson's Algorithm
     """
     
-    def __init__(self):
-        print "out lier rejection created"
-
     def process(self, datFiles):
         """ 
         Takes the list of datFiles and processses their high/low Q's and checks validity
@@ -26,6 +23,7 @@ class OutLierRejection():
         else:
             IHQ = []
             for dat in datFiles:
+#                dat.setValid(False) # failsafe reset
                 IHQ.append(dat.getIHQ())
             ihqThreshold = (0.92 * max(IHQ))
             
@@ -47,9 +45,9 @@ if __name__ == '__main__':
     outerlierTest = OutLierRejection()
     print "Running - Outlier Rejection"
     
-    datC = glob.glob('C1z_buffer_1p6m_0020.dat')
-    datD = glob.glob('C1active_buffer*')
-    datF = glob.glob('C1q_buffer*')
+    datC = glob.glob('GIbuffer_1*')
+    datD = glob.glob('GI25*')
+    datF = glob.glob('GI75*')
     
     dC = []
     dD = []

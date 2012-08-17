@@ -1,9 +1,7 @@
 import logging
-import sys
+import sys, os
 from Worker import Worker
-from Core import AverageList
 from Core import DatFile
-from Core import DatFileWriter
 from Pipeline import Pipeline
 
 
@@ -27,7 +25,7 @@ class WorkerRollingAverageSubtraction(Worker):
         #Class specific variables
         self.averagedBuffer = None
         self.datFiles = []
-        self.datIndex = 1
+        self.datIndex = None
         
     def processRequest(self, command, obj):
         """
@@ -49,8 +47,6 @@ class WorkerRollingAverageSubtraction(Worker):
                 self.logger.critical("Key Error at averaged_buffer")
                 
     
-    
-    
     def subAvIntensities(self, datFile):
         """
         Averages out the datfile againse the other datfiles
@@ -58,63 +54,38 @@ class WorkerRollingAverageSubtraction(Worker):
         Args:
             datFile: the latest datfile
         """
+        if not self.datFiles:
+            self.datIndex = datFile.getIndex()
+            
         self.datFiles.append(datFile)
         intensities = []
-        
+
         self.rejection.process(self.datFiles)
+        
+        self.avgDat = DatFile.average([dat for dat in self.datFiles])        
+        datName = "avg_sample_%s_%s" % (self.datIndex, datFile.getBaseFileName())
+        self.avgDat.datFilePath = os.path.join(self.absoluteLocation, 'avg', datName)
+        
+        
+        self.subDat = self.avgDat.subtract(self.averagedBuffer)
+        datName = "avg_sub_sample_%s_%s" % (self.datIndex, datFile.getBaseFileName())
+        self.subDat.datFilePath = os.path.join(self.absoluteLocation, 'sub', datName)
 
-        for datFile in self.datFiles:
-            if datFile.isValid():
-                intensities.append(datFile.getIntensities())
+        self.avgDat.write()
+        self.subDat.write()
         
-        datName = "avg_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
-        averagedIntensities = self.averageList.average(intensities)
-        if (averagedIntensities):
-            self.datWriter.writeFile(self.absoluteLocation + "/avg/", datName, { 'q' : datFile.getq(), "i" : averagedIntensities, 'errors':datFile.getErrors()})
-            self.pub.send_pyobj({"command":"averaged_sample", "location":datName})
-        
-        
-        datName = "avg_sub_sample_" + str(self.datIndex) + "_" +datFile.getBaseFileName()
-        subtractedIntensities = self.subtractBuffer(averagedIntensities, self.averagedBuffer)
-        if (subtractedIntensities):
-            self.datWriter.writeFile(self.absoluteLocation + "/sub/", datName, { 'q' : datFile.getq(), "i" : subtractedIntensities, 'errors':datFile.getErrors()})
-            self.pub.send_pyobj({"command":"averaged_subtracted_sample", "location":datName})
-            
-            # record the next input file ready for pipeline modelling 
-            if self.PipelineOn:
-                path = str(self.absoluteLocation)
-                path = path.rstrip('/')
-                folders = path.split('/')
-                if self.ExperimentFolderOn: # user folder and experiment folder
-                    self.nextPipelineUser = folders[-2]
-                    self.nextPipelineExp = folders[-1]
-                else: # only user folder
-                    self.nextPipelineUser = folders[-1]
-                    self.nextPipelineExp = None
-                self.nextPipelineInput = datName
-
-
-        
-
-    def subtractBuffer(self, intensities, buffer):
-        """
-        Subtracts the averaged buffer from the averaged datFiles
-        Currently only works on the intensities
-        
-        Args:
-            intensities: Little cheat as it only takes intensities at the moment 
-            buffer: corresponding buffer intensities
-        
-        """
-        if (buffer):
-            newIntensities = []
-            for i in range(0, len(intensities)):
-                newIntensities.append(intensities[i] - buffer[i])
-            return newIntensities
-        else:
-            self.logger.critical("Error with Averaged Buffer, unable to perform subtraction")    
-    
-    
+        # record the next input file ready for pipeline modelling 
+        if self.PipelineOn:
+            path = str(self.absoluteLocation)
+            path = path.rstrip('/')
+            folders = path.split('/')
+            if self.ExperimentFolderOn: # user folder and experiment folder
+                self.nextPipelineUser = folders[-2]
+                self.nextPipelineExp = folders[-1]
+            else: # only user folder
+                self.nextPipelineUser = folders[-1]
+                self.nextPipelineExp = None
+            self.nextPipelineInput = datName
     
     def setBuffer(self, buffer):
         self.averagedBuffer = buffer
@@ -124,8 +95,9 @@ class WorkerRollingAverageSubtraction(Worker):
         """
         Worker needs to clear out the current datfiles and increase the sample index
         """
+
         self.datFiles = []
-        self.datIndex = self.datIndex + 1
+        self.datIndex = None
         
         # run pipeline with an averaged, subtracted datfile
         if self.nextPipelineInput and self.PipelineOn:
@@ -151,7 +123,7 @@ class WorkerRollingAverageSubtraction(Worker):
         Worker.clear(self)
         self.averagedBuffer = None
         self.datFiles = []
-        self.datIndex = 1
+        self.datIndex = None
         
         
         

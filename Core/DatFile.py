@@ -1,37 +1,42 @@
-import os
+import os, StringIO
 
-class DatFile(object):
+
+def average(dat_list):
+    result = DatFile()
+    result.q = dat_list[0].getq()
+    result.errors = dat_list[0].getErrors() # this is wrong
+    result.intensities = [sum(item) / len(item) for item in zip(*[dat.getIntensities() for dat in dat_list])]
+    return result
+
+def subtract(dat_one, dat_two):    
+    result = DatFile()
+    result.q = dat_one.getq()
+    result.errors = dat_one.getErrors()
+    i_two = dat_two.getIntensities()
+    result.intensities = [ val - i_two[idx] for idx, val in enumerate(dat_one.getIntensities()) ]
+    return result
+
+class _DatFile(object):
     """
     Takes a path to a datFile, parses it and calculates the respective High/Low Q's
      
     Args:
         datFilePath (String): Absolute location of the datFile as told from the local machine
     """
-    def __init__(self, datFilePath):
+    def __init__(self, datFilePath=None):
         self.datFilePath = datFilePath
         self.q = []
         self.intensities = []
         self.errors = []
 
-        self.numLines = 0 
         self.IQL = 0.0
         self.IHQ = 0.0
         self.valid = False
-        self.nonAir = False
-        self.processDatFile()
-        self.processHighLowQ()
+        
+        if datFilePath:
+            self.processDatFile()
+        #self.processHighLowQ()
 
-
-    def openDatFile(self):
-        f = open(self.datFilePath, "r")
-        return f    
-    
-    def closeDatFile(self, f):
-        try:
-            f.close()
-            return True
-        except ValueError:
-            raise Exception("Dat File did not close")
 
     def getFileName(self):
         """
@@ -39,6 +44,10 @@ class DatFile(object):
         | eg: datFile1.dat
         """
         return os.path.basename(self.datFilePath)
+    
+    def getIndex(self):
+        filename, _ = os.path.splitext(self.getFileName())
+        return filename.split("_")[-1]
     
     def getRootName(self):
         return "_".join(self.getFileName().split("_")[:-1])
@@ -75,18 +84,6 @@ class DatFile(object):
         """
         return self.errors
  
-    def setq(self, q):
-        self.q = q
-        
-    def setIntensities(self, intensities):
-        self.intensities = intensities
-        
-    def setErrors(self, errors):
-        self.errors = errors
-    
-    def setNumLines(self, numLines):
-        self.numLines = numLines
-        
     def setValid(self, valid = False):
         self.valid = valid
         
@@ -136,15 +133,63 @@ class DatFile(object):
         """
         Returns High Q
         """
+        self.findIHQ()
         return self.IHQ 
     
     def getILQ(self):
         """
         Returns Low Q
-        """        
+        """
+        self.findILQ()
         return self.ILQ
     
+    def subtract(self, buff):
+        return subtract(self, buff)
+        
+    def write(self, datFilePath=None):
+        if datFilePath:
+            self.datFilePath = datFilePath
+        if not self.datFilePath:
+            raise Exception()
+        
+        f = StringIO.StringIO()
+        f.write("%s\n" % self.getFileName())
+        f.write("%14s %16s %16s\n" % ('q', 'I', 'Err'))
+        for item in zip(self.q, self.intensities, self.errors):
+            f.write("%18.10f %16.10f %16.10f\n" % item)
+        
+        with open(self.datFilePath, 'w') as datfile:
+            datfile.write(f.getvalue())
 
+import string
+class DatFileSpeedTest(_DatFile):
+    def processDatFile(self):
+        with open(self.datFilePath) as f:
+            # read array
+            f.readline()
+            f.readline()
+            arr = [ line.split() for line in f ]
+
+            # extraxt cols and convert
+            self.q =           map(float, [row[0] for row in arr])
+            self.intensities = map(float, [row[1] for row in arr])
+            self.errors =      map(float, [row[2] for row in arr])
+            
+            
+    
+#class DatFileNumpy(DatFile):
+#    def processDatFile(self):
+#        self.q, self.intensities, self.errors = numpy.loadtxt(self.datFilePath, skiprows=2, unpack=True)
+#class DatFileNumpy2(DatFile):
+#    def processDatFile(self):
+#        DatFile.processDatFile(self)
+#        self.q, self.intensities, self.errors = numpy.array(self.q), numpy.array(self.intensities), numpy.array(self.errors)
+#class DatFileNumpy3(DatFileSpeedTest):
+#    def processDatFile(self):
+#        DatFileSpeedTest.processDatFile(self)
+#        self.q, self.intensities, self.errors = numpy.array(self.q), numpy.array(self.intensities), numpy.array(self.errors)
+        
+DatFile = DatFileSpeedTest
 if __name__ == "__main__":
     b = DatFile("../data/dat/air_1_0001.dat")
     print b.getFileName()

@@ -1,6 +1,5 @@
 import logging
-import sys
-sys.path.append("../")
+import sys, os
 from Worker import Worker
 from Core import DatFile
 
@@ -38,23 +37,10 @@ class WorkerStaticImage(Worker):
     def subtractBuffer(self, datFile, buffer):
         """Method for subtracting buffer from static sample """
         if (buffer):
-            newIntensities = []
-            for i in range(0, len(datFile.getIntensities())):
-                newIntensities.append(datFile.getIntensities()[i] - buffer[i])
-
             self.logger.info("Subtracting Buffer")
-            
-            datName = "raw_sub_"+datFile.getFileName()
-            
-
-            self.datWriter.writeFile(self.absoluteLocation + "/sub/raw_sub/", datName, { 'q' : datFile.getq(), "i" : newIntensities, 'errors':datFile.getErrors()})
-            
-            self.pub.send_pyobj({"command":"subtracted_sample", "location":datName})
-
-            
-            
-            
-            
+            datName = "raw_sub_%s" % (datFile.getFileName(), )
+            subDat = datFile.subtract(buffer)
+            subDat.write(os.path.join(self.absoluteLocation, 'sub', 'raw_sub', datName))
         else:
             self.logger.critical("Error with Averaged Buffer, unable to perform subtraction")    
     
